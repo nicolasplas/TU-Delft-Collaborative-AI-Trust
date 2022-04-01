@@ -62,8 +62,49 @@ class BaseAgent(BW4TBrain):
         self._checkGoals = []
         self._possibleGoalBLocks = []
         self._notExplored = []
+        self._trustBeliefs = {}
+        self._teamStatus = {}
+        self._teamObservedStatus = {}
+        self._age = 0
 
-    def filter_bw4t_observations(self, state):
+    def filter_observations(self, state):
+        self._age += 1
+        agent_name = state[self.agent_id]['obj_id']
+
+        if len(self._teamMembers) == 0:
+            for member in state['World']['team_members']:
+                if member != agent_name and member not in self._teamMembers:
+                    self._teamMembers.append(member)
+                    self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+
+        closest_agents = state.get_closest_agents()
+        if closest_agents is not None:
+            for item in closest_agents:
+                name = item['name']
+                location = item['location']
+                is_carrying = []
+                if len(item['is_carrying']) > 0:
+                    for block in item['is_carrying']:
+                        is_carrying.append(block['visualization'])
+                self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
+                                                  'age': self._age}
+                self._sendMessage('status of ' + name + ': location: '
+                                  + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
+
+        receivedMessages = self._processMessages(self._teamMembers)
+
+        for member in self._teamMembers:
+            if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
+                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                    self._teamObservedStatus[member] = None
+
+        for member in self._teamMembers:
+            for message in receivedMessages[member]:
+                self._parseMessage(message, member, agent_name)
+
+        # Update trust beliefs for team members
+        self._trustBlief(agent_name, state)
+        print(str(self._trustBeliefs))
         return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -415,7 +456,6 @@ class BaseAgent(BW4TBrain):
                     self._navigator.add_waypoints([block['location']])
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
-
     def _sendMessage(self, mssg, sender):
         '''
         Enable sending messages in one line of code
@@ -437,21 +477,114 @@ class BaseAgent(BW4TBrain):
                     receivedMessages[member].append(mssg.content)
         return receivedMessages
 
-    def _trustBlief(self, member, received):
+    def _trustBlief(self, name, state):
         '''
         Baseline implementation of a trust belief. Creates a dictionary with trust belief scores for each team member, for example based on the received messages.
         '''
+
         # You can change the default value to your preference
-        default = 0.5
-        trustBeliefs = {}
-        for member in received.keys():
-            trustBeliefs[member] = default
-        for member in received.keys():
-            for message in received[member]:
-                if 'Found' in message and 'colour' not in message:
-                    trustBeliefs[member] -= 0.1
-                    break
-        return trustBeliefs
+
+        theta = 0.17
+        mu = 0.5
+        increment = 0.03
+
+        for member in self._teamMembers:
+            if member not in self._teamStatus or member not in self._teamObservedStatus:
+                continue
+            self._trustBeliefs[member]['age'] = self._age
+            rating = self._trustBeliefs[member]['rating']
+            if self._teamObservedStatus[member] is not None and self._teamStatus[member]['action'] == 'searching':
+                if self._teamObservedStatus[member] is not None:
+                    # print(member)
+                    # print('is in room' + str(findRoom(self._teamObservedStatus[member]['location'], state)))
+                    # print('says it is in room' + str(self._teamStatus[member]['room']))
+                    if findRoom(self._teamObservedStatus[member]['location'], state) == self._teamStatus[member][
+                        'room']:
+                        rating += \
+                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust increased')
+                    else:
+                        if self._age - self._teamObservedStatus[member]['age'] > 10:
+                            rating -= \
+                                increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                            # print('trust decreased')
+            elif self._teamStatus[member]['action'] == 'carrying':
+                if self._teamObservedStatus[member] is not None and len(
+                        self._teamObservedStatus[member]['is_carrying']) > 0:
+                    # print(member)
+                    # print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
+                    # print('says it is carrying' + str(self._teamStatus[member]['block']))
+                    if self._teamObservedStatus[member]['is_carrying'][0] == self._teamStatus[member]['block']:
+                        rating += \
+                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust increased')
+
+                    else:
+                        rating -= \
+                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust decreased')
+            if rating < 0:
+                rating = 0
+            if rating > 1:
+                rating = 1
+            self._trustBeliefs[member]['rating'] = rating
+
+    def _parseMessage(self, message, member, myself):
+        string_list = message.split(" ")
+        if string_list[0] == "Opening" and string_list[1] == "door":
+            room_number = string_list[3].split("_")[1]
+            self._teamStatus[member] = {'action': 'opening', 'room': room_number, 'age': self._age}
+        if string_list[0] == "Searching" and string_list[1] == "through":
+            room_number = string_list[2].split("_")[1]
+            self._teamStatus[member] = {'action': 'searching', 'room': room_number, 'age': self._age}
+        if string_list[0] == "Found" and string_list[1] == "goal":
+            block = message.split('{')[1]
+            block = '{' + block.split('}')[0] + '}'
+            block = block.replace("'", '"')
+            block = block.replace("True", "true")
+            block = block.replace("False", "false")
+            block = json.loads(block)
+            self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
+        if string_list[0] == "Picking" and string_list[1] == "up":
+            block = message.split('{')[1]
+            block = '{' + block.split('}')[0] + '}'
+            block = block.replace("'", '"')
+            block = block.replace("True", "true")
+            block = block.replace("False", "false")
+            block = json.loads(block)
+            self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
+        if string_list[0] == "Dropping" and string_list[1] == "goal":
+            block = message.split('{')[1]
+            block = '{' + block.split('}')[0] + '}'
+            block = block.replace("'", '"')
+            block = block.replace("True", "true")
+            block = block.replace("False", "false")
+            block = json.loads(block)
+            self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
+        if string_list[0] == "status" and string_list[1] == "of":
+            if self._trustBeliefs[member]['rating'] > 0.7:
+                member = string_list[2][:-1]
+                if member != myself:
+                    location = message.split('(')[1]
+                    location = location.split(')')[0]
+                    x = location.split(',')[0]
+                    y = location.split(',')[0]
+                    location = (int(x), int(y))
+                    blocks = []
+                    if len(string_list) > 9:
+                        block = message.split('{')[1]
+                        block = '{' + block.split('}')[0] + '}'
+                        block = block.replace("'", '"')
+                        block = block.replace("True", "true")
+                        block = block.replace("False", "false")
+                        block = json.loads(block)
+                        blocks.append(block)
+                    self._teamObservedStatus[member] = {'location': location, 'is_carrying': blocks,
+                                                        'age': self._age - 1}
 
 
 class StrongAgent(BW4TBrain):
@@ -477,8 +610,49 @@ class StrongAgent(BW4TBrain):
         self._possibleGoalBLocks = []
         self._notExplored = []
         self._carryingCount = 0
+        self._trustBeliefs = {}
+        self._teamStatus = {}
+        self._teamObservedStatus = {}
+        self._age = 0
 
-    def filter_bw4t_observations(self, state):
+    def filter_observations(self, state):
+        self._age += 1
+        agent_name = state[self.agent_id]['obj_id']
+
+        if len(self._teamMembers) == 0:
+            for member in state['World']['team_members']:
+                if member != agent_name and member not in self._teamMembers:
+                    self._teamMembers.append(member)
+                    self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+
+        closest_agents = state.get_closest_agents()
+        if closest_agents is not None:
+            for item in closest_agents:
+                name = item['name']
+                location = item['location']
+                is_carrying = []
+                if len(item['is_carrying']) > 0:
+                    for block in item['is_carrying']:
+                        is_carrying.append(block['visualization'])
+                self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
+                                                  'age': self._age}
+                self._sendMessage('status of ' + name + ': location: '
+                                  + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
+
+        receivedMessages = self._processMessages(self._teamMembers)
+
+        for member in self._teamMembers:
+            if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
+                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                    self._teamObservedStatus[member] = None
+
+        for member in self._teamMembers:
+            for message in receivedMessages[member]:
+                self._parseMessage(message, member, agent_name)
+
+        # Update trust beliefs for team members
+        self._trustBlief(agent_name, state)
+        print(str(self._trustBeliefs))
         return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -844,7 +1018,6 @@ class StrongAgent(BW4TBrain):
                     self._navigator.add_waypoints([block['location']])
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
-
     def _sendMessage(self, mssg, sender):
         '''
         Enable sending messages in one line of code
@@ -866,21 +1039,114 @@ class StrongAgent(BW4TBrain):
                     receivedMessages[member].append(mssg.content)
         return receivedMessages
 
-    def _trustBlief(self, member, received):
+    def _trustBlief(self, name, state):
         '''
         Baseline implementation of a trust belief. Creates a dictionary with trust belief scores for each team member, for example based on the received messages.
         '''
+
         # You can change the default value to your preference
-        default = 0.5
-        trustBeliefs = {}
-        for member in received.keys():
-            trustBeliefs[member] = default
-        for member in received.keys():
-            for message in received[member]:
-                if 'Found' in message and 'colour' not in message:
-                    trustBeliefs[member] -= 0.1
-                    break
-        return trustBeliefs
+
+        theta = 0.17
+        mu = 0.5
+        increment = 0.03
+
+        for member in self._teamMembers:
+            if member not in self._teamStatus or member not in self._teamObservedStatus:
+                continue
+            self._trustBeliefs[member]['age'] = self._age
+            rating = self._trustBeliefs[member]['rating']
+            if self._teamObservedStatus[member] is not None and self._teamStatus[member]['action'] == 'searching':
+                if self._teamObservedStatus[member] is not None:
+                    # print(member)
+                    # print('is in room' + str(findRoom(self._teamObservedStatus[member]['location'], state)))
+                    # print('says it is in room' + str(self._teamStatus[member]['room']))
+                    if findRoom(self._teamObservedStatus[member]['location'], state) == self._teamStatus[member][
+                        'room']:
+                        rating += \
+                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust increased')
+                    else:
+                        if self._age - self._teamObservedStatus[member]['age'] > 10:
+                            rating -= \
+                                increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                            # print('trust decreased')
+            elif self._teamStatus[member]['action'] == 'carrying':
+                if self._teamObservedStatus[member] is not None and len(
+                        self._teamObservedStatus[member]['is_carrying']) > 0:
+                    # print(member)
+                    # print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
+                    # print('says it is carrying' + str(self._teamStatus[member]['block']))
+                    if self._teamObservedStatus[member]['is_carrying'][0] == self._teamStatus[member]['block']:
+                        rating += \
+                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust increased')
+
+                    else:
+                        rating -= \
+                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust decreased')
+            if rating < 0:
+                rating = 0
+            if rating > 1:
+                rating = 1
+            self._trustBeliefs[member]['rating'] = rating
+
+    def _parseMessage(self, message, member, myself):
+        string_list = message.split(" ")
+        if string_list[0] == "Opening" and string_list[1] == "door":
+            room_number = string_list[3].split("_")[1]
+            self._teamStatus[member] = {'action': 'opening', 'room': room_number, 'age': self._age}
+        if string_list[0] == "Searching" and string_list[1] == "through":
+            room_number = string_list[2].split("_")[1]
+            self._teamStatus[member] = {'action': 'searching', 'room': room_number, 'age': self._age}
+        if string_list[0] == "Found" and string_list[1] == "goal":
+            block = message.split('{')[1]
+            block = '{' + block.split('}')[0] + '}'
+            block = block.replace("'", '"')
+            block = block.replace("True", "true")
+            block = block.replace("False", "false")
+            block = json.loads(block)
+            self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
+        if string_list[0] == "Picking" and string_list[1] == "up":
+            block = message.split('{')[1]
+            block = '{' + block.split('}')[0] + '}'
+            block = block.replace("'", '"')
+            block = block.replace("True", "true")
+            block = block.replace("False", "false")
+            block = json.loads(block)
+            self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
+        if string_list[0] == "Dropping" and string_list[1] == "goal":
+            block = message.split('{')[1]
+            block = '{' + block.split('}')[0] + '}'
+            block = block.replace("'", '"')
+            block = block.replace("True", "true")
+            block = block.replace("False", "false")
+            block = json.loads(block)
+            self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
+        if string_list[0] == "status" and string_list[1] == "of":
+            if self._trustBeliefs[member]['rating'] > 0.7:
+                member = string_list[2][:-1]
+                if member != myself:
+                    location = message.split('(')[1]
+                    location = location.split(')')[0]
+                    x = location.split(',')[0]
+                    y = location.split(',')[0]
+                    location = (int(x), int(y))
+                    blocks = []
+                    if len(string_list) > 9:
+                        block = message.split('{')[1]
+                        block = '{' + block.split('}')[0] + '}'
+                        block = block.replace("'", '"')
+                        block = block.replace("True", "true")
+                        block = block.replace("False", "false")
+                        block = json.loads(block)
+                        blocks.append(block)
+                    self._teamObservedStatus[member] = {'location': location, 'is_carrying': blocks,
+                                                        'age': self._age - 1}
 
 class ColorblindAgent(BW4TBrain):
 
@@ -902,8 +1168,49 @@ class ColorblindAgent(BW4TBrain):
         self._checkGoals = []
         self._possibleGoalBLocks = []
         self._notExplored = []
+        self._trustBeliefs = {}
+        self._teamStatus = {}
+        self._teamObservedStatus = {}
+        self._age = 0
 
-    def filter_bw4t_observations(self, state):
+    def filter_observations(self, state):
+        self._age += 1
+        agent_name = state[self.agent_id]['obj_id']
+
+        if len(self._teamMembers) == 0:
+            for member in state['World']['team_members']:
+                if member != agent_name and member not in self._teamMembers:
+                    self._teamMembers.append(member)
+                    self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+
+        closest_agents = state.get_closest_agents()
+        if closest_agents is not None:
+            for item in closest_agents:
+                name = item['name']
+                location = item['location']
+                is_carrying = []
+                if len(item['is_carrying']) > 0:
+                    for block in item['is_carrying']:
+                        is_carrying.append(block['visualization'])
+                self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
+                                                  'age': self._age}
+                self._sendMessage('status of ' + name + ': location: '
+                                  + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
+
+        receivedMessages = self._processMessages(self._teamMembers)
+
+        for member in self._teamMembers:
+            if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
+                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                    self._teamObservedStatus[member] = None
+
+        for member in self._teamMembers:
+            for message in receivedMessages[member]:
+                self._parseMessage(message, member, agent_name)
+
+        # Update trust beliefs for team members
+        self._trustBlief(agent_name, state)
+        print(str(self._trustBeliefs))
         return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -1216,7 +1523,6 @@ class ColorblindAgent(BW4TBrain):
                     self._navigator.add_waypoints([block['location']])
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
-
     def _sendMessage(self, mssg, sender):
         '''
         Enable sending messages in one line of code
@@ -1238,21 +1544,114 @@ class ColorblindAgent(BW4TBrain):
                     receivedMessages[member].append(mssg.content)
         return receivedMessages
 
-    def _trustBlief(self, member, received):
+    def _trustBlief(self, name, state):
         '''
         Baseline implementation of a trust belief. Creates a dictionary with trust belief scores for each team member, for example based on the received messages.
         '''
+
         # You can change the default value to your preference
-        default = 0.5
-        trustBeliefs = {}
-        for member in received.keys():
-            trustBeliefs[member] = default
-        for member in received.keys():
-            for message in received[member]:
-                if 'Found' in message and 'colour' not in message:
-                    trustBeliefs[member] -= 0.1
-                    break
-        return trustBeliefs
+
+        theta = 0.17
+        mu = 0.5
+        increment = 0.03
+
+        for member in self._teamMembers:
+            if member not in self._teamStatus or member not in self._teamObservedStatus:
+                continue
+            self._trustBeliefs[member]['age'] = self._age
+            rating = self._trustBeliefs[member]['rating']
+            if self._teamObservedStatus[member] is not None and self._teamStatus[member]['action'] == 'searching':
+                if self._teamObservedStatus[member] is not None:
+                    # print(member)
+                    # print('is in room' + str(findRoom(self._teamObservedStatus[member]['location'], state)))
+                    # print('says it is in room' + str(self._teamStatus[member]['room']))
+                    if findRoom(self._teamObservedStatus[member]['location'], state) == self._teamStatus[member][
+                        'room']:
+                        rating += \
+                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust increased')
+                    else:
+                        if self._age - self._teamObservedStatus[member]['age'] > 10:
+                            rating -= \
+                                increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                            # print('trust decreased')
+            elif self._teamStatus[member]['action'] == 'carrying':
+                if self._teamObservedStatus[member] is not None and len(
+                        self._teamObservedStatus[member]['is_carrying']) > 0:
+                    # print(member)
+                    # print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
+                    # print('says it is carrying' + str(self._teamStatus[member]['block']))
+                    if self._teamObservedStatus[member]['is_carrying'][0] == self._teamStatus[member]['block']:
+                        rating += \
+                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust increased')
+
+                    else:
+                        rating -= \
+                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust decreased')
+            if rating < 0:
+                rating = 0
+            if rating > 1:
+                rating = 1
+            self._trustBeliefs[member]['rating'] = rating
+
+    def _parseMessage(self, message, member, myself):
+        string_list = message.split(" ")
+        if string_list[0] == "Opening" and string_list[1] == "door":
+            room_number = string_list[3].split("_")[1]
+            self._teamStatus[member] = {'action': 'opening', 'room': room_number, 'age': self._age}
+        if string_list[0] == "Searching" and string_list[1] == "through":
+            room_number = string_list[2].split("_")[1]
+            self._teamStatus[member] = {'action': 'searching', 'room': room_number, 'age': self._age}
+        if string_list[0] == "Found" and string_list[1] == "goal":
+            block = message.split('{')[1]
+            block = '{' + block.split('}')[0] + '}'
+            block = block.replace("'", '"')
+            block = block.replace("True", "true")
+            block = block.replace("False", "false")
+            block = json.loads(block)
+            self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
+        if string_list[0] == "Picking" and string_list[1] == "up":
+            block = message.split('{')[1]
+            block = '{' + block.split('}')[0] + '}'
+            block = block.replace("'", '"')
+            block = block.replace("True", "true")
+            block = block.replace("False", "false")
+            block = json.loads(block)
+            self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
+        if string_list[0] == "Dropping" and string_list[1] == "goal":
+            block = message.split('{')[1]
+            block = '{' + block.split('}')[0] + '}'
+            block = block.replace("'", '"')
+            block = block.replace("True", "true")
+            block = block.replace("False", "false")
+            block = json.loads(block)
+            self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
+        if string_list[0] == "status" and string_list[1] == "of":
+            if self._trustBeliefs[member]['rating'] > 0.7:
+                member = string_list[2][:-1]
+                if member != myself:
+                    location = message.split('(')[1]
+                    location = location.split(')')[0]
+                    x = location.split(',')[0]
+                    y = location.split(',')[0]
+                    location = (int(x), int(y))
+                    blocks = []
+                    if len(string_list) > 9:
+                        block = message.split('{')[1]
+                        block = '{' + block.split('}')[0] + '}'
+                        block = block.replace("'", '"')
+                        block = block.replace("True", "true")
+                        block = block.replace("False", "false")
+                        block = json.loads(block)
+                        blocks.append(block)
+                    self._teamObservedStatus[member] = {'location': location, 'is_carrying': blocks,
+                                                        'age': self._age - 1}
 
 class LiarAgent(BW4TBrain):
 
@@ -1274,8 +1673,49 @@ class LiarAgent(BW4TBrain):
         self._checkGoals = []
         self._possibleGoalBLocks = []
         self._notExplored = []
+        self._trustBeliefs = {}
+        self._teamStatus = {}
+        self._teamObservedStatus = {}
+        self._age = 0
 
-    def filter_bw4t_observations(self, state):
+    def filter_observations(self, state):
+        self._age += 1
+        agent_name = state[self.agent_id]['obj_id']
+
+        if len(self._teamMembers) == 0:
+            for member in state['World']['team_members']:
+                if member != agent_name and member not in self._teamMembers:
+                    self._teamMembers.append(member)
+                    self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+
+        closest_agents = state.get_closest_agents()
+        if closest_agents is not None:
+            for item in closest_agents:
+                name = item['name']
+                location = item['location']
+                is_carrying = []
+                if len(item['is_carrying']) > 0:
+                    for block in item['is_carrying']:
+                        is_carrying.append(block['visualization'])
+                self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
+                                                  'age': self._age}
+                self._sendMessage('status of ' + name + ': location: '
+                                  + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
+
+        receivedMessages = self._processMessages(self._teamMembers)
+
+        for member in self._teamMembers:
+            if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
+                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                    self._teamObservedStatus[member] = None
+
+        for member in self._teamMembers:
+            for message in receivedMessages[member]:
+                self._parseMessage(message, member, agent_name)
+
+        # Update trust beliefs for team members
+        self._trustBlief(agent_name, state)
+        print(str(self._trustBeliefs))
         return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -1623,15 +2063,11 @@ class LiarAgent(BW4TBrain):
                     self._navigator.add_waypoints([block['location']])
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
-
-    def _sendMessage(self, mssg, sender, state):
+    def _sendMessage(self, mssg, sender):
         '''
         Enable sending messages in one line of code
         '''
-        msssg = mssg
-        if random.random() < 0.8:
-            msssg = self._generateLie(state)
-        msg = Message(content=msssg, from_id=sender)
+        msg = Message(content=mssg, from_id=sender)
         if msg.content not in self.received_messages:
             self.send_message(msg)
 
@@ -1648,21 +2084,114 @@ class LiarAgent(BW4TBrain):
                     receivedMessages[member].append(mssg.content)
         return receivedMessages
 
-    def _trustBlief(self, member, received):
+    def _trustBlief(self, name, state):
         '''
         Baseline implementation of a trust belief. Creates a dictionary with trust belief scores for each team member, for example based on the received messages.
         '''
+
         # You can change the default value to your preference
-        default = 0.5
-        trustBeliefs = {}
-        for member in received.keys():
-            trustBeliefs[member] = default
-        for member in received.keys():
-            for message in received[member]:
-                if 'Found' in message and 'colour' not in message:
-                    trustBeliefs[member] -= 0.1
-                    break
-        return trustBeliefs
+
+        theta = 0.17
+        mu = 0.5
+        increment = 0.03
+
+        for member in self._teamMembers:
+            if member not in self._teamStatus or member not in self._teamObservedStatus:
+                continue
+            self._trustBeliefs[member]['age'] = self._age
+            rating = self._trustBeliefs[member]['rating']
+            if self._teamObservedStatus[member] is not None and self._teamStatus[member]['action'] == 'searching':
+                if self._teamObservedStatus[member] is not None:
+                    # print(member)
+                    # print('is in room' + str(findRoom(self._teamObservedStatus[member]['location'], state)))
+                    # print('says it is in room' + str(self._teamStatus[member]['room']))
+                    if findRoom(self._teamObservedStatus[member]['location'], state) == self._teamStatus[member][
+                        'room']:
+                        rating += \
+                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust increased')
+                    else:
+                        if self._age - self._teamObservedStatus[member]['age'] > 10:
+                            rating -= \
+                                increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                            # print('trust decreased')
+            elif self._teamStatus[member]['action'] == 'carrying':
+                if self._teamObservedStatus[member] is not None and len(
+                        self._teamObservedStatus[member]['is_carrying']) > 0:
+                    # print(member)
+                    # print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
+                    # print('says it is carrying' + str(self._teamStatus[member]['block']))
+                    if self._teamObservedStatus[member]['is_carrying'][0] == self._teamStatus[member]['block']:
+                        rating += \
+                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust increased')
+
+                    else:
+                        rating -= \
+                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust decreased')
+            if rating < 0:
+                rating = 0
+            if rating > 1:
+                rating = 1
+            self._trustBeliefs[member]['rating'] = rating
+
+    def _parseMessage(self, message, member, myself):
+        string_list = message.split(" ")
+        if string_list[0] == "Opening" and string_list[1] == "door":
+            room_number = string_list[3].split("_")[1]
+            self._teamStatus[member] = {'action': 'opening', 'room': room_number, 'age': self._age}
+        if string_list[0] == "Searching" and string_list[1] == "through":
+            room_number = string_list[2].split("_")[1]
+            self._teamStatus[member] = {'action': 'searching', 'room': room_number, 'age': self._age}
+        if string_list[0] == "Found" and string_list[1] == "goal":
+            block = message.split('{')[1]
+            block = '{' + block.split('}')[0] + '}'
+            block = block.replace("'", '"')
+            block = block.replace("True", "true")
+            block = block.replace("False", "false")
+            block = json.loads(block)
+            self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
+        if string_list[0] == "Picking" and string_list[1] == "up":
+            block = message.split('{')[1]
+            block = '{' + block.split('}')[0] + '}'
+            block = block.replace("'", '"')
+            block = block.replace("True", "true")
+            block = block.replace("False", "false")
+            block = json.loads(block)
+            self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
+        if string_list[0] == "Dropping" and string_list[1] == "goal":
+            block = message.split('{')[1]
+            block = '{' + block.split('}')[0] + '}'
+            block = block.replace("'", '"')
+            block = block.replace("True", "true")
+            block = block.replace("False", "false")
+            block = json.loads(block)
+            self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
+        if string_list[0] == "status" and string_list[1] == "of":
+            if self._trustBeliefs[member]['rating'] > 0.7:
+                member = string_list[2][:-1]
+                if member != myself:
+                    location = message.split('(')[1]
+                    location = location.split(')')[0]
+                    x = location.split(',')[0]
+                    y = location.split(',')[0]
+                    location = (int(x), int(y))
+                    blocks = []
+                    if len(string_list) > 9:
+                        block = message.split('{')[1]
+                        block = '{' + block.split('}')[0] + '}'
+                        block = block.replace("'", '"')
+                        block = block.replace("True", "true")
+                        block = block.replace("False", "false")
+                        block = json.loads(block)
+                        blocks.append(block)
+                    self._teamObservedStatus[member] = {'location': location, 'is_carrying': blocks,
+                                                        'age': self._age - 1}
 
     def _generateLie(self, state: State):
         rand = random.randint(1,6)
