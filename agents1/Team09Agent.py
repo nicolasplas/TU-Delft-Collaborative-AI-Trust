@@ -130,12 +130,12 @@ class BaseAgent(BW4TBrain):
                             if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
                                 self._sendMessage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
-                                    o['visualization']['shape']) + ', \"colour\": ' + str(
-                                    o['visualization']['colour']) + '} at location ' + str(o['location']), agent_name)
+                                    o['visualization']['shape']) + ', \"colour\": \"' + str(
+                                    o['visualization']['colour']) + '\"} at location ' + str(o['location']), agent_name)
                                 self._sendMessage('Picking up goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
-                                    o['visualization']['shape']) + ', \"colour\": ' + str(
-                                    o['visualization']['colour']) + '} at location ' + str(
+                                    o['visualization']['shape']) + ', \"colour\": \"' + str(
+                                    o['visualization']['colour']) + '\"} at location ' + str(
                                     o['location']), agent_name)
                                 self._phase = Phase.FOLLOW_PATH_TO_DROP
                                 self._navigator.reset_full()
@@ -200,8 +200,8 @@ class BaseAgent(BW4TBrain):
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
                                         self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": ' + str(
-                                        self._carryingO['visualization']['colour']) + '} at location ' + str(self.state.get_self()['location']),
+                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
+                                        self._carryingO['visualization']['colour']) + '\"} at location ' + str(self.state.get_self()['location']),
                                   agent_name)
 
                 self._carrying = None
@@ -253,8 +253,8 @@ class BaseAgent(BW4TBrain):
                                 self._phase = Phase.MOVE_GOAL_BLOCK
                             self._sendMessage('Picking up goal block {\"size\": ' + str(
                                 o['visualization']['size']) + ', \"shape\": ' + str(
-                                o['visualization']['shape']) + ', \"colour\": ' + str(
-                                o['visualization']['colour']) + '} at location ' + str(
+                                o['visualization']['shape']) + ', \"colour\": \"' + str(
+                                o['visualization']['colour']) + '\"} at location ' + str(
                                 o['location']), agent_name)
                             action = GrabObject.__name__
                             self._carryingO = o
@@ -286,8 +286,8 @@ class BaseAgent(BW4TBrain):
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
                                         self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": ' + str(
-                                        self._carryingO['visualization']['colour']) + '} at location ' + str(
+                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
+                                        self._carryingO['visualization']['colour']) + '\"} at location ' + str(
                     self.state.get_self()['location']),
                                   agent_name)
                 self._carryingO = None
@@ -301,8 +301,8 @@ class BaseAgent(BW4TBrain):
                 for g in self._goalBlocks:
                     self._sendMessage('Goal block {\"size\": ' + str(
                         g['visualization']['size']) + ', \"shape\": ' + str(
-                        g['visualization']['shape']) + ', \"colour\": ' + str(
-                        g['visualization']['colour']) + '} at location ' + str(
+                        g['visualization']['shape']) + ', \"colour\": \"' + str(
+                        g['visualization']['colour']) + '\"} at location ' + str(
                         self.state.get_self()['location']),
                                       agent_name)
                 if len(self._goalBlocks) == 0:
@@ -357,13 +357,13 @@ class BaseAgent(BW4TBrain):
                                 if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour']:
                                     self._sendMessage('Found goal block {\"size\": ' + str(
                                         o['visualization']['size']) + ', \"shape\": ' + str(
-                                        o['visualization']['shape']) + ', \"colour\": ' + str(
-                                        o['visualization']['colour']) + '} at location ' + str(o['location']),
+                                        o['visualization']['shape']) + ', \"colour\": \"' + str(
+                                        o['visualization']['colour']) + '\"} at location ' + str(o['location']),
                                                       agent_name)
                                     self._sendMessage('Picking up goal block {\"size\": ' + str(
                                         o['visualization']['size']) + ', \"shape\": ' + str(
-                                        o['visualization']['shape']) + ', \"colour\": ' + str(
-                                        o['visualization']['colour']) + '} at location ' + str(
+                                        o['visualization']['shape']) + ', \"colour\": \"' + str(
+                                        o['visualization']['colour']) + '\"} at location ' + str(
                                         o['location']), agent_name)
                                     self._phase = Phase.FOLLOW_PATH_TO_DROP
                                     self._navigator.reset_full()
@@ -532,12 +532,12 @@ class StrongAgent(BW4TBrain):
                             if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
                                 self._sendMessage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
-                                    o['visualization']['shape']) + ', \"colour\": ' + str(
-                                    o['visualization']['colour']) + '} at location ' + str(o['location']), agent_name)
+                                    o['visualization']['shape']) + ', \"colour\": \"' + str(
+                                    o['visualization']['colour']) + '\"} at location ' + str(o['location']), agent_name)
                                 self._sendMessage('Picking up goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
-                                    o['visualization']['shape']) + ', \"colour\": ' + str(
-                                    o['visualization']['colour']) + '} at location ' + str(
+                                    o['visualization']['shape']) + ', \"colour\": \"' + str(
+                                    o['visualization']['colour']) + '\"} at location ' + str(
                                     o['location']), agent_name)
                                 if self._carryingCount == 1:
                                     self._phase = Phase.FOLLOW_PATH_TO_DROP
@@ -598,8 +598,8 @@ class StrongAgent(BW4TBrain):
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
                                         self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": ' + str(
-                                        self._carryingO['visualization']['colour']) + '} at location ' + str(self.state.get_self()['location']),
+                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
+                                        self._carryingO['visualization']['colour']) + '\"} at location ' + str(self.state.get_self()['location']),
                                   agent_name)
 
                 if self._carryingCount == 2:
@@ -682,8 +682,8 @@ class StrongAgent(BW4TBrain):
                                 self._phase = Phase.MOVE_GOAL_BLOCK
                             self._sendMessage('Picking up goal block {\"size\": ' + str(
                                 o['visualization']['size']) + ', \"shape\": ' + str(
-                                o['visualization']['shape']) + ', \"colour\": ' + str(
-                                o['visualization']['colour']) + '} at location ' + str(
+                                o['visualization']['shape']) + ', \"colour\": \"' + str(
+                                o['visualization']['colour']) + '\"} at location ' + str(
                                 o['location']), agent_name)
                             action = GrabObject.__name__
                             self._carryingO = o
@@ -715,8 +715,8 @@ class StrongAgent(BW4TBrain):
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
                                         self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": ' + str(
-                                        self._carryingO['visualization']['colour']) + '} at location ' + str(
+                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
+                                        self._carryingO['visualization']['colour']) + '\"} at location ' + str(
                     self.state.get_self()['location']),
                                   agent_name)
                 self._carryingO = None
@@ -730,8 +730,8 @@ class StrongAgent(BW4TBrain):
                 for g in self._goalBlocks:
                     self._sendMessage('Goal block {\"size\": ' + str(
                         g['visualization']['size']) + ', \"shape\": ' + str(
-                        g['visualization']['shape']) + ', \"colour\": ' + str(
-                        g['visualization']['colour']) + '} at location ' + str(
+                        g['visualization']['shape']) + ', \"colour\": \"' + str(
+                        g['visualization']['colour']) + '\"} at location ' + str(
                         self.state.get_self()['location']),
                                       agent_name)
                 if len(self._goalBlocks) == 0:
@@ -786,13 +786,13 @@ class StrongAgent(BW4TBrain):
                                 if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour']:
                                     self._sendMessage('Found goal block {\"size\": ' + str(
                                         o['visualization']['size']) + ', \"shape\": ' + str(
-                                        o['visualization']['shape']) + ', \"colour\": ' + str(
-                                        o['visualization']['colour']) + '} at location ' + str(o['location']),
+                                        o['visualization']['shape']) + ', \"colour\": \"' + str(
+                                        o['visualization']['colour']) + '\"} at location ' + str(o['location']),
                                                       agent_name)
                                     self._sendMessage('Picking up goal block {\"size\": ' + str(
                                         o['visualization']['size']) + ', \"shape\": ' + str(
-                                        o['visualization']['shape']) + ', \"colour\": ' + str(
-                                        o['visualization']['colour']) + '} at location ' + str(
+                                        o['visualization']['shape']) + ', \"colour\": \"' + str(
+                                        o['visualization']['colour']) + '\"} at location ' + str(
                                         o['location']), agent_name)
                                     self._phase = Phase.FOLLOW_PATH_TO_DROP
                                     self._navigator.reset_full()
@@ -952,7 +952,7 @@ class ColorblindAgent(BW4TBrain):
                             if o['visualization']['shape'] == g['visualization']['shape'] and len(o['carried_by']) == 0:
                                 self._sendMessage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
-                                    o['visualization']['shape']) + ', \"colour\": ' + '} at location ' + str(o['location']), agent_name)
+                                    o['visualization']['shape']) + ', \"colour\": \"' + '\"} at location ' + str(o['location']), agent_name)
                 if action!=None:
                     return action, {}
                 if len(self._possibleGoalBLocks) == 0:
@@ -1007,7 +1007,7 @@ class ColorblindAgent(BW4TBrain):
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
                                         self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": ' +  '} at location ' + str(self.state.get_self()['location']),
+                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' +  '\"} at location ' + str(self.state.get_self()['location']),
                                   agent_name)
 
                 self._carrying = None
@@ -1059,7 +1059,7 @@ class ColorblindAgent(BW4TBrain):
                                 self._phase = Phase.MOVE_GOAL_BLOCK
                             self._sendMessage('Picking up goal block {\"size\": ' + str(
                                 o['visualization']['size']) + ', \"shape\": ' + str(
-                                o['visualization']['shape']) + ', \"colour\": ' + '} at location ' + str(
+                                o['visualization']['shape']) + ', \"colour\": \"' + '\"} at location ' + str(
                                 o['location']), agent_name)
                             action = GrabObject.__name__
                             self._carryingO = o
@@ -1091,7 +1091,7 @@ class ColorblindAgent(BW4TBrain):
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
                                         self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": ' + '} at location ' + str(
+                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + '\"} at location ' + str(
                     self.state.get_self()['location']),
                                   agent_name)
                 self._carryingO = None
@@ -1105,7 +1105,7 @@ class ColorblindAgent(BW4TBrain):
                 for g in self._goalBlocks:
                     self._sendMessage('Goal block {\"size\": ' + str(
                         g['visualization']['size']) + ', \"shape\": ' + str(
-                        g['visualization']['shape']) + ', \"colour\": ' + '} at location ' + str(
+                        g['visualization']['shape']) + ', \"colour\": \"' + '\"} at location ' + str(
                         self.state.get_self()['location']),
                                       agent_name)
                 if len(self._goalBlocks) == 0:
@@ -1160,11 +1160,11 @@ class ColorblindAgent(BW4TBrain):
                                 if o['visualization']['shape'] == g['visualization']['shape'] :
                                     self._sendMessage('Found goal block {\"size\": ' + str(
                                         o['visualization']['size']) + ', \"shape\": ' + str(
-                                        o['visualization']['shape']) + ', \"colour\": ' +  '} at location ' + str(o['location']),
+                                        o['visualization']['shape']) + ', \"colour\": \"' +  '\"} at location ' + str(o['location']),
                                                       agent_name)
                                     self._sendMessage('Picking up goal block {\"size\": ' + str(
                                         o['visualization']['size']) + ', \"shape\": ' + str(
-                                        o['visualization']['shape']) + ', \"colour\": ' + '} at location ' + str(
+                                        o['visualization']['shape']) + ', \"colour\": \"' + '\"} at location ' + str(
                                         o['location']), agent_name)
                                     self._phase = Phase.FOLLOW_PATH_TO_DROP
                                     self._navigator.reset_full()
