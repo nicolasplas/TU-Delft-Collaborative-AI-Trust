@@ -2,6 +2,8 @@ from bw4t.BW4TWorld import BW4TWorld
 from bw4t.statistics import Statistics
 from agents1.Team09Agent import StrongAgent
 from agents1.Team09Agent import BaseAgent
+from agents1.Team09Agent import LiarAgent
+from agents1.Team09Agent import LazyAgent
 from agents1.BW4THuman import Human
 
 
