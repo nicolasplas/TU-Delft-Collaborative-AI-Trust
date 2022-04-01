@@ -503,7 +503,8 @@ class StrongAgent(BW4TBrain):
                 return None, {}
 
             if Phase.ENTERING_ROOM == self._phase:
-                self._notExplored.remove(self._door)
+                if len(self._notExplored) != 0:
+                    self._notExplored.remove(self._door)
                 self._sendMessage('Searching through ' + self._door['room_name'], agent_name)
                 self._navigator.reset_full()
                 objects = state.get_room_objects(self._door['room_name'])
@@ -519,6 +520,10 @@ class StrongAgent(BW4TBrain):
                 if objects is not None:
                     for o in objects:
                         for g in self._goalBlocks:
+                            if o['location'] == g['location']:
+                                continue
+                            if self._carrying is not None and g == self._carrying:
+                                continue
                             if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
                                 self._sendMessage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
