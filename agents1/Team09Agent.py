@@ -2093,8 +2093,13 @@ class LazyAgent(BW4TBrain):
                     return None, {}
                 # If there is a block on the goal, update the goallist
                 if len(self._checkGoals) == 0:
-                    self._goalBlocks = state.get_with_property({'is_goal_block': True})
-                    self._phase = Phase.CHECK_GOALS
+                    if len(self._possibleGoalBLocks) == 0:
+                        self._phase = Phase.PLAN_PATH_TO_ROOM
+                    else:
+                        block = self._possibleGoalBLocks[0]
+                        self._navigator.reset_full()
+                        self._navigator.add_waypoints([block['location']])
+                        self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 goal = self._checkGoals[0]
                 objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
