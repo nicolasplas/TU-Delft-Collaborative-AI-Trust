@@ -4,6 +4,7 @@ from agents1.Team09Agent import StrongAgent
 from agents1.Team09Agent import BaseAgent
 from agents1.Team09Agent import LiarAgent
 from agents1.Team09Agent import LazyAgent
+from agents1.BW4TBaselineAgent import BaseLineAgent
 from agents1.BW4THuman import Human
 
 
