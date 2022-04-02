@@ -140,25 +140,6 @@ class BaseAgent(BW4TBrain):
                                 o['visualization']['shape']) + ', \"colour\": \"' + str(
                                 o['visualization']['colour']) + '\"} at location ' + str(o['location']), agent_name)
 
-
-
-        objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
-        if objects is not None:
-            for o in objects:
-                count = 0
-                for g in self._goalBlocks:
-                    if o['location'] == g['location']:
-                        count += 1
-                if count == 0:
-                    for g in self._goalBlocks:
-                        if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == \
-                                g['visualization']['colour'] and len(o['carried_by']) == 0:
-                            self._possibleGoalBLocks.append(o['location'])
-                            self._sendMessage('Found goal block {\"size\": ' + str(
-                                o['visualization']['size']) + ', \"shape\": ' + str(
-                                o['visualization']['shape']) + ', \"colour\": \"' + str(
-                                o['visualization']['colour']) + '\"} at location ' + str(o['location']), agent_name)
-
         while True:
             if Phase.PLAN_PATH_TO_ROOM == self._phase:
                 self._navigator.reset_full()
@@ -571,7 +552,12 @@ class BaseAgent(BW4TBrain):
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
-                self._possibleGoalBLocks.append(tupl)
+                isgoal = False
+                for g in self.state.get_with_property({'is_goal_block': True}):
+                    if tupl == g['location']:
+                        isgoal = True
+                if not isgoal:
+                    self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
@@ -1168,7 +1154,12 @@ class StrongAgent(BW4TBrain):
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
-                self._possibleGoalBLocks.append(tupl)
+                isgoal = False
+                for g in self.state.get_with_property({'is_goal_block': True}):
+                    if tupl == g['location']:
+                        isgoal = True
+                if not isgoal:
+                    self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
@@ -1219,6 +1210,8 @@ class StrongAgent(BW4TBrain):
                         blocks.append(block)
                     self._teamObservedStatus[member] = {'location': location, 'is_carrying': blocks,
                                                         'age': self._age - 1}
+
+
 class ColorblindAgent(BW4TBrain):
 
     def __init__(self, settings: Dict[str, object]):
@@ -1707,7 +1700,12 @@ class ColorblindAgent(BW4TBrain):
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
-                self._possibleGoalBLocks.append(tupl)
+                isgoal = False
+                for g in self.state.get_with_property({'is_goal_block': True}):
+                    if tupl == g['location']:
+                        isgoal = True
+                if not isgoal:
+                    self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
@@ -1758,6 +1756,7 @@ class ColorblindAgent(BW4TBrain):
                         blocks.append(block)
                     self._teamObservedStatus[member] = {'location': location, 'is_carrying': blocks,
                                                         'age': self._age - 1}
+
 
 class LazyAgent(BW4TBrain):
 
@@ -2320,7 +2319,12 @@ class LazyAgent(BW4TBrain):
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
-                self._possibleGoalBLocks.append(tupl)
+                isgoal = False
+                for g in self.state.get_with_property({'is_goal_block': True}):
+                    if tupl == g['location']:
+                        isgoal = True
+                if not isgoal:
+                    self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
