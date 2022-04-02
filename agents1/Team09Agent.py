@@ -549,7 +549,7 @@ class BaseAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "":
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 isgoal = False
@@ -1151,7 +1151,7 @@ class StrongAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "":
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 isgoal = False
@@ -1691,13 +1691,14 @@ class ColorblindAgent(BW4TBrain):
         if string_list[0] == "Found" and string_list[1] == "goal":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
+            block['colour'] = ""
             block = block.replace("'", '"')
             block = block.replace("True", "true")
             block = block.replace("False", "false")
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "":
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 isgoal = False
@@ -1709,6 +1710,7 @@ class ColorblindAgent(BW4TBrain):
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
+            block['colour'] = ""
             block = block.replace("'", '"')
             block = block.replace("True", "true")
             block = block.replace("False", "false")
@@ -1724,6 +1726,7 @@ class ColorblindAgent(BW4TBrain):
         if string_list[0] == "Dropping" and string_list[1] == "goal":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
+            block['colour'] = ""
             block = block.replace("'", '"')
             block = block.replace("True", "true")
             block = block.replace("False", "false")
@@ -2316,7 +2319,7 @@ class LazyAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "":
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 isgoal = False
