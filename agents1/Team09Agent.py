@@ -1691,7 +1691,6 @@ class ColorblindAgent(BW4TBrain):
         if string_list[0] == "Found" and string_list[1] == "goal":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
-            block['colour'] = ""
             block = block.replace("'", '"')
             block = block.replace("True", "true")
             block = block.replace("False", "false")
@@ -1710,7 +1709,6 @@ class ColorblindAgent(BW4TBrain):
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
-            block['colour'] = ""
             block = block.replace("'", '"')
             block = block.replace("True", "true")
             block = block.replace("False", "false")
@@ -1726,7 +1724,6 @@ class ColorblindAgent(BW4TBrain):
         if string_list[0] == "Dropping" and string_list[1] == "goal":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
-            block['colour'] = ""
             block = block.replace("'", '"')
             block = block.replace("True", "true")
             block = block.replace("False", "false")
