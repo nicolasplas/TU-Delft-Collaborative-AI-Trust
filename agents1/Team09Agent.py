@@ -569,8 +569,9 @@ class BaseAgent(BW4TBrain):
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
-                location = '(' + message.split('(')[1].split(')')[0] + ')'
-                self._possibleGoalBLocks.append(location)
+                location = message.split('(')[1].split(')')[0].split(', ')
+                tupl = (int(location[0]), int(location[1]))
+                self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
@@ -581,9 +582,10 @@ class BaseAgent(BW4TBrain):
             self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
             # If the trust is high enough, add remove goal block from possible goal blocks
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
-                location = '(' + message.split('(')[1].split(')')[0] + ')'
+                location = message.split('(')[1].split(')')[0].split(', ')
+                tupl = (int(location[0]), int(location[1]))
                 for b in self._possibleGoalBLocks:
-                    if b == location:
+                    if b == tupl:
                         self._possibleGoalBLocks.remove(b)
         if string_list[0] == "Dropping" and string_list[1] == "goal":
             block = message.split('{')[1]
@@ -595,9 +597,10 @@ class BaseAgent(BW4TBrain):
             self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
             # If the trust is high enough, remove goal block from goalblocks
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
-                location = '(' + message.split('(')[1].split(')')[0] + ')'
+                location = message.split('(')[1].split(')')[0].split(', ')
+                tupl = (int(location[0]), int(location[1]))
                 for g in self._goalBlocks:
-                    if g['location'] == location:
+                    if g['location'] == tupl:
                         self._goalBlocks.remove(g)
         if string_list[0] == "status" and string_list[1] == "of":
             if self._trustBeliefs[member]['rating'] > Trust_Level:
@@ -735,6 +738,11 @@ class StrongAgent(BW4TBrain):
                 else:
                     self._door = random.choice(rooms)
                 doorLoc = self._door['location']
+                print("PRINTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print(doorLoc)
+                print(type(doorLoc))
+                my_result = list(map(type, doorLoc))
+                print(my_result)
                 # Location in front of door is south from door
                 doorLoc = doorLoc[0], doorLoc[1] + 1
                 # Send message of current action
@@ -829,7 +837,7 @@ class StrongAgent(BW4TBrain):
                 else:
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
-                    self._navigator.add_waypoints([block['location']])
+                    self._navigator.add_waypoints([block])
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
             if Phase.FOLLOW_PATH_TO_DROP == self._phase:
@@ -875,7 +883,7 @@ class StrongAgent(BW4TBrain):
                     else:
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
-                        self._navigator.add_waypoints([block['location']])
+                        self._navigator.add_waypoints([block])
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
                     if len(self._goalBlocks) >= 1:
@@ -1163,8 +1171,9 @@ class StrongAgent(BW4TBrain):
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
-                location = '(' + message.split('(')[1].split(')')[0] + ')'
-                self._possibleGoalBLocks.append(location)
+                location = message.split('(')[1].split(')')[0].split(', ')
+                tupl = (int(location[0]), int(location[1]))
+                self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
@@ -1175,9 +1184,10 @@ class StrongAgent(BW4TBrain):
             self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
             # If the trust is high enough, add remove goal block from possible goal blocks
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
-                location = '(' + message.split('(')[1].split(')')[0] + ')'
+                location = message.split('(')[1].split(')')[0].split(', ')
+                tupl = (int(location[0]), int(location[1]))
                 for b in self._possibleGoalBLocks:
-                    if b == location:
+                    if b == tupl:
                         self._possibleGoalBLocks.remove(b)
         if string_list[0] == "Dropping" and string_list[1] == "goal":
             block = message.split('{')[1]
@@ -1189,9 +1199,10 @@ class StrongAgent(BW4TBrain):
             self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
             # If the trust is high enough, remove goal block from goalblocks
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
-                location = '(' + message.split('(')[1].split(')')[0] + ')'
+                location = message.split('(')[1].split(')')[0].split(', ')
+                tupl = (int(location[0]), int(location[1]))
                 for g in self._goalBlocks:
-                    if g['location'] == location:
+                    if g['location'] == tupl:
                         self._goalBlocks.remove(g)
         if string_list[0] == "status" and string_list[1] == "of":
             if self._trustBeliefs[member]['rating'] > Trust_Level:
@@ -1692,7 +1703,6 @@ class ColorblindAgent(BW4TBrain):
         if string_list[0] == "Found" and string_list[1] == "goal":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
-            block['colour'] = ""
             block = block.replace("'", '"')
             block = block.replace("True", "true")
             block = block.replace("False", "false")
@@ -1700,12 +1710,12 @@ class ColorblindAgent(BW4TBrain):
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
-                location = '(' + message.split('(')[1].split(')')[0] + ')'
-                self._possibleGoalBLocks.append(location)
+                location = message.split('(')[1].split(')')[0].split(', ')
+                tupl = (int(location[0]), int(location[1]))
+                self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
-            block['colour'] = ""
             block = block.replace("'", '"')
             block = block.replace("True", "true")
             block = block.replace("False", "false")
@@ -1713,14 +1723,14 @@ class ColorblindAgent(BW4TBrain):
             self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
             # If the trust is high enough, add remove goal block from possible goal blocks
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
-                location = '(' + message.split('(')[1].split(')')[0] + ')'
+                location = message.split('(')[1].split(')')[0].split(', ')
+                tupl = (int(location[0]), int(location[1]))
                 for b in self._possibleGoalBLocks:
-                    if b == location:
+                    if b == tupl:
                         self._possibleGoalBLocks.remove(b)
         if string_list[0] == "Dropping" and string_list[1] == "goal":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
-            block['colour'] = ""
             block = block.replace("'", '"')
             block = block.replace("True", "true")
             block = block.replace("False", "false")
@@ -1728,9 +1738,10 @@ class ColorblindAgent(BW4TBrain):
             self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
             # If the trust is high enough, remove goal block from goalblocks
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
-                location = '(' + message.split('(')[1].split(')')[0] + ')'
+                location = message.split('(')[1].split(')')[0].split(', ')
+                tupl = (int(location[0]), int(location[1]))
                 for g in self._goalBlocks:
-                    if g['location'] == location:
+                    if g['location'] == tupl:
                         self._goalBlocks.remove(g)
         if string_list[0] == "status" and string_list[1] == "of":
             if self._trustBeliefs[member]['rating'] > Trust_Level:
@@ -1745,7 +1756,6 @@ class ColorblindAgent(BW4TBrain):
                     if len(string_list) > 9:
                         block = message.split('{')[1]
                         block = '{' + block.split('}')[0] + '}'
-                        block['colour'] = ""
                         block = block.replace("'", '"')
                         block = block.replace("True", "true")
                         block = block.replace("False", "false")
@@ -2313,8 +2323,9 @@ class LazyAgent(BW4TBrain):
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
-                location = '(' + message.split('(')[1].split(')')[0] + ')'
-                self._possibleGoalBLocks.append(location)
+                location = message.split('(')[1].split(')')[0].split(', ')
+                tupl = (int(location[0]), int(location[1]))
+                self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
@@ -2325,9 +2336,10 @@ class LazyAgent(BW4TBrain):
             self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
             # If the trust is high enough, add remove goal block from possible goal blocks
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
-                location = '(' + message.split('(')[1].split(')')[0] + ')'
+                location = message.split('(')[1].split(')')[0].split(', ')
+                tupl = (int(location[0]), int(location[1]))
                 for b in self._possibleGoalBLocks:
-                    if b == location:
+                    if b == tupl:
                         self._possibleGoalBLocks.remove(b)
         if string_list[0] == "Dropping" and string_list[1] == "goal":
             block = message.split('{')[1]
@@ -2339,9 +2351,10 @@ class LazyAgent(BW4TBrain):
             self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
             # If the trust is high enough, remove goal block from goalblocks
             if self._trustBeliefs[member]['rating'] >= Trust_Level:
-                location = '(' + message.split('(')[1].split(')')[0] + ')'
+                location = message.split('(')[1].split(')')[0].split(', ')
+                tupl = (int(location[0]), int(location[1]))
                 for g in self._goalBlocks:
-                    if g['location'] == location:
+                    if g['location'] == tupl:
                         self._goalBlocks.remove(g)
         if string_list[0] == "status" and string_list[1] == "of":
             if self._trustBeliefs[member]['rating'] > Trust_Level:
