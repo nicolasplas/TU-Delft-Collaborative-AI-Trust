@@ -738,11 +738,6 @@ class StrongAgent(BW4TBrain):
                 else:
                     self._door = random.choice(rooms)
                 doorLoc = self._door['location']
-                print("PRINTING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-                print(doorLoc)
-                print(type(doorLoc))
-                my_result = list(map(type, doorLoc))
-                print(my_result)
                 # Location in front of door is south from door
                 doorLoc = doorLoc[0], doorLoc[1] + 1
                 # Send message of current action
@@ -809,7 +804,7 @@ class StrongAgent(BW4TBrain):
                                     self._navigator.add_waypoints([g['location']])
                                     self._carrying2 = g
                                     self._carryingO2 = o
-                                elif len(self._goalBlocks) == 1:
+                                elif len(self._goalBlocks) == 1 or len(self._notExplored) == 0:
                                     self._phase = Phase.FOLLOW_PATH_TO_DROP
                                     self._navigator.reset_full()
                                     self._navigator.add_waypoints([g['location']])
