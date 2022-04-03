@@ -1,4 +1,6 @@
 import json
+import csv
+import pandas as pd
 import math
 from typing import final, List, Dict, Final
 import enum, random
@@ -74,44 +76,61 @@ class BaseAgent(BW4TBrain):
     def filter_observations(self, state):
         self._age += 1
         agent_name = state[self.agent_id]['obj_id']
+        headers = ['agent', 'rating', 'age']
 
-        if len(self._teamMembers) == 0:
-            for member in state['World']['team_members']:
-                if member != agent_name and member not in self._teamMembers:
-                    self._teamMembers.append(member)
-                    self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
-        if self._age % 25 == 0:
-            self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
-        closest_agents = state.get_closest_agents()
-        if closest_agents is not None:
-            for item in closest_agents:
-                name = item['name']
-                location = item['location']
-                is_carrying = []
-                if len(item['is_carrying']) > 0:
-                    for block in item['is_carrying']:
-                        block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
-                                 "colour": block['visualization']["colour"]}
-                        is_carrying.append(block)
-                self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
-                                                  'age': self._age}
-                self._sendMessage('status of ' + name + ': location: '
-                                  + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
+        with open("agents1/agents.csv", 'w', newline="") as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=headers)
+            reader = csv.DictReader(csv_file, fieldnames=headers)
+            writer.writeheader()
 
-        receivedMessages = self._processMessages(self._teamMembers)
+            if len(self._teamMembers) == 0:
+                for member in state['World']['team_members']:
+                    if member != agent_name and member not in self._teamMembers:
+                        self._teamMembers.append(member)
+                        self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+                        writer.writerow({'agent': member, 'rating': 0.5, 'age': self._age})
 
-        for member in self._teamMembers:
-            if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
-                    self._teamObservedStatus[member] = None
 
-        for member in self._teamMembers:
-            for message in receivedMessages[member]:
-                self._parseMessage(message, member, agent_name)
+            if self._age % 25 == 0:
+                self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
+            closest_agents = state.get_closest_agents()
+            if closest_agents is not None:
+                for item in closest_agents:
+                    name = item['name']
+                    location = item['location']
+                    is_carrying = []
+                    if len(item['is_carrying']) > 0:
+                        for block in item['is_carrying']:
+                            block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
+                                     "colour": block['visualization']["colour"]}
+                            is_carrying.append(block)
+                    self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
+                                                      'age': self._age}
+                    self._sendMessage('status of ' + name + ': location: '
+                                      + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
 
-        # Update trust beliefs for team members
-        self._trustBlief(agent_name, state)
-        return state
+            receivedMessages = self._processMessages(self._teamMembers)
+
+            for member in self._teamMembers:
+                if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
+                    if self._age - self._teamObservedStatus[member]['age'] > delete_age:
+                        self._teamObservedStatus[member] = None
+
+            for member in self._teamMembers:
+                for message in receivedMessages[member]:
+                    self._parseMessage(message, member, agent_name)
+
+            # Update trust beliefs for team members
+            self._trustBlief(agent_name, state)
+            csv_file.close()
+
+            df = pd.read_csv("agents1/agents.csv")
+            loc = 0
+            for member in self._teamMembers:
+                df.loc[loc, 'age'] = self._age
+                df.loc[loc, 'rating'] = self._trustBeliefs[member]['rating']
+                loc += 1
+            return state
 
     def decide_on_bw4t_action(self, state: State):
         if not self._goalsInitialized:
@@ -653,46 +672,67 @@ class StrongAgent(BW4TBrain):
     def filter_observations(self, state):
         self._age += 1
         agent_name = state[self.agent_id]['obj_id']
+        headers = ['agent', 'rating', 'age']
 
-        if len(self._teamMembers) == 0:
-            for member in state['World']['team_members']:
-                if member != agent_name and member not in self._teamMembers:
-                    self._teamMembers.append(member)
-                    self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+        with open("agents1/agent1.csv", 'w', newline="") as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=headers)
+            reader = csv.DictReader(csv_file, fieldnames=headers)
+            writer.writeheader()
 
-        if self._age % 25 == 0:
-            self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
+            if len(self._teamMembers) == 0:
+                for member in state['World']['team_members']:
+                    if member != agent_name and member not in self._teamMembers:
+                        self._teamMembers.append(member)
+                        self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+                        writer.writerow({'agent': member, 'rating': 0.5, 'age': self._age})
 
-        closest_agents = state.get_closest_agents()
-        if closest_agents is not None:
-            for item in closest_agents:
-                name = item['name']
-                location = item['location']
-                is_carrying = []
-                if len(item['is_carrying']) > 0:
-                    for block in item['is_carrying']:
-                        block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
-                                 "colour": block['visualization']["colour"]}
-                        is_carrying.append(block)
-                self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
-                                                  'age': self._age}
-                self._sendMessage('status of ' + name + ': location: '
-                                  + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
+            if len(self._teamMembers) == 0:
+                for member in state['World']['team_members']:
+                    if member != agent_name and member not in self._teamMembers:
+                        self._teamMembers.append(member)
+                        self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
 
-        receivedMessages = self._processMessages(self._teamMembers)
+            if self._age % 25 == 0:
+                self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
 
-        for member in self._teamMembers:
-            if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
-                    self._teamObservedStatus[member] = None
+            closest_agents = state.get_closest_agents()
+            if closest_agents is not None:
+                for item in closest_agents:
+                    name = item['name']
+                    location = item['location']
+                    is_carrying = []
+                    if len(item['is_carrying']) > 0:
+                        for block in item['is_carrying']:
+                            block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
+                                     "colour": block['visualization']["colour"]}
+                            is_carrying.append(block)
+                    self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
+                                                      'age': self._age}
+                    self._sendMessage('status of ' + name + ': location: '
+                                      + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
 
-        for member in self._teamMembers:
-            for message in receivedMessages[member]:
-                self._parseMessage(message, member, agent_name)
+            receivedMessages = self._processMessages(self._teamMembers)
 
-        # Update trust beliefs for team members
-        self._trustBlief(agent_name, state)
-        return state
+            for member in self._teamMembers:
+                if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
+                    if self._age - self._teamObservedStatus[member]['age'] > delete_age:
+                        self._teamObservedStatus[member] = None
+
+            for member in self._teamMembers:
+                for message in receivedMessages[member]:
+                    self._parseMessage(message, member, agent_name)
+
+            # Update trust beliefs for team members
+            self._trustBlief(agent_name, state)
+            csv_file.close()
+
+            df = pd.read_csv("agents1/agent1.csv")
+            loc = 0
+            for member in self._teamMembers:
+                df.loc[loc, 'age'] = self._age
+                df.loc[loc, 'rating'] = self._trustBeliefs[member]['rating']
+                loc += 1
+            return state
 
     def decide_on_bw4t_action(self, state: State):
         if not self._goalsInitialized:
@@ -1273,46 +1313,67 @@ class ColorblindAgent(BW4TBrain):
     def filter_observations(self, state):
         self._age += 1
         agent_name = state[self.agent_id]['obj_id']
+        headers = ['agent', 'rating', 'age']
 
-        if len(self._teamMembers) == 0:
-            for member in state['World']['team_members']:
-                if member != agent_name and member not in self._teamMembers:
-                    self._teamMembers.append(member)
-                    self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+        with open("agents1/agent2.csv", 'w', newline="") as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=headers)
+            reader = csv.DictReader(csv_file, fieldnames=headers)
+            writer.writeheader()
 
-        if self._age % 25 == 0:
-            self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
+            if len(self._teamMembers) == 0:
+                for member in state['World']['team_members']:
+                    if member != agent_name and member not in self._teamMembers:
+                        self._teamMembers.append(member)
+                        self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+                        writer.writerow({'agent': member, 'rating': 0.5, 'age': self._age})
 
-        closest_agents = state.get_closest_agents()
-        if closest_agents is not None:
-            for item in closest_agents:
-                name = item['name']
-                location = item['location']
-                is_carrying = []
-                if len(item['is_carrying']) > 0:
-                    for block in item['is_carrying']:
-                        block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
-                                 "colour": block['visualization']["colour"]}
-                        is_carrying.append(block)
-                self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
-                                                  'age': self._age}
-                self._sendMessage('status of ' + name + ': location: '
-                                  + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
+            if len(self._teamMembers) == 0:
+                for member in state['World']['team_members']:
+                    if member != agent_name and member not in self._teamMembers:
+                        self._teamMembers.append(member)
+                        self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
 
-        receivedMessages = self._processMessages(self._teamMembers)
+            if self._age % 25 == 0:
+                self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
 
-        for member in self._teamMembers:
-            if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
-                    self._teamObservedStatus[member] = None
+            closest_agents = state.get_closest_agents()
+            if closest_agents is not None:
+                for item in closest_agents:
+                    name = item['name']
+                    location = item['location']
+                    is_carrying = []
+                    if len(item['is_carrying']) > 0:
+                        for block in item['is_carrying']:
+                            block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
+                                     "colour": block['visualization']["colour"]}
+                            is_carrying.append(block)
+                    self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
+                                                      'age': self._age}
+                    self._sendMessage('status of ' + name + ': location: '
+                                      + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
 
-        for member in self._teamMembers:
-            for message in receivedMessages[member]:
-                self._parseMessage(message, member, agent_name)
+            receivedMessages = self._processMessages(self._teamMembers)
 
-        # Update trust beliefs for team members
-        self._trustBlief(agent_name, state)
-        return state
+            for member in self._teamMembers:
+                if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
+                    if self._age - self._teamObservedStatus[member]['age'] > delete_age:
+                        self._teamObservedStatus[member] = None
+
+            for member in self._teamMembers:
+                for message in receivedMessages[member]:
+                    self._parseMessage(message, member, agent_name)
+
+            # Update trust beliefs for team members
+            self._trustBlief(agent_name, state)
+            csv_file.close()
+
+            df = pd.read_csv("agents1/agent2.csv")
+            loc = 0
+            for member in self._teamMembers:
+                df.loc[loc, 'age'] = self._age
+                df.loc[loc, 'rating'] = self._trustBeliefs[member]['rating']
+                loc += 1
+            return state
 
     def decide_on_bw4t_action(self, state: State):
         if not self._goalsInitialized:
@@ -1832,46 +1893,67 @@ class LazyAgent(BW4TBrain):
     def filter_observations(self, state):
         self._age += 1
         agent_name = state[self.agent_id]['obj_id']
+        headers = ['agent', 'rating', 'age']
 
-        if len(self._teamMembers) == 0:
-            for member in state['World']['team_members']:
-                if member != agent_name and member not in self._teamMembers:
-                    self._teamMembers.append(member)
-                    self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+        with open("agents1/agent3.csv", 'w', newline="") as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=headers)
+            reader = csv.DictReader(csv_file, fieldnames=headers)
+            writer.writeheader()
 
-        if self._age % 25 == 0:
-            self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
+            if len(self._teamMembers) == 0:
+                for member in state['World']['team_members']:
+                    if member != agent_name and member not in self._teamMembers:
+                        self._teamMembers.append(member)
+                        self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+                        writer.writerow({'agent': member, 'rating': 0.5, 'age': self._age})
 
-        closest_agents = state.get_closest_agents()
-        if closest_agents is not None:
-            for item in closest_agents:
-                name = item['name']
-                location = item['location']
-                is_carrying = []
-                if len(item['is_carrying']) > 0:
-                    for block in item['is_carrying']:
-                        block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
-                                 "colour": block['visualization']["colour"]}
-                        is_carrying.append(block)
-                self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
-                                                  'age': self._age}
-                self._sendMessage('status of ' + name + ': location: '
-                                  + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
+            if len(self._teamMembers) == 0:
+                for member in state['World']['team_members']:
+                    if member != agent_name and member not in self._teamMembers:
+                        self._teamMembers.append(member)
+                        self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
 
-        receivedMessages = self._processMessages(self._teamMembers)
+            if self._age % 25 == 0:
+                self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
 
-        for member in self._teamMembers:
-            if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
-                    self._teamObservedStatus[member] = None
+            closest_agents = state.get_closest_agents()
+            if closest_agents is not None:
+                for item in closest_agents:
+                    name = item['name']
+                    location = item['location']
+                    is_carrying = []
+                    if len(item['is_carrying']) > 0:
+                        for block in item['is_carrying']:
+                            block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
+                                     "colour": block['visualization']["colour"]}
+                            is_carrying.append(block)
+                    self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
+                                                      'age': self._age}
+                    self._sendMessage('status of ' + name + ': location: '
+                                      + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
 
-        for member in self._teamMembers:
-            for message in receivedMessages[member]:
-                self._parseMessage(message, member, agent_name)
+            receivedMessages = self._processMessages(self._teamMembers)
 
-        # Update trust beliefs for team members
-        self._trustBlief(agent_name, state)
-        return state
+            for member in self._teamMembers:
+                if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
+                    if self._age - self._teamObservedStatus[member]['age'] > delete_age:
+                        self._teamObservedStatus[member] = None
+
+            for member in self._teamMembers:
+                for message in receivedMessages[member]:
+                    self._parseMessage(message, member, agent_name)
+
+            # Update trust beliefs for team members
+            self._trustBlief(agent_name, state)
+            csv_file.close()
+
+            df = pd.read_csv("agents1/agent3.csv")
+            loc = 0
+            for member in self._teamMembers:
+                df.loc[loc, 'age'] = self._age
+                df.loc[loc, 'rating'] = self._trustBeliefs[member]['rating']
+                loc += 1
+            return state
 
     def decide_on_bw4t_action(self, state: State):
         if not self._goalsInitialized:
@@ -2480,50 +2562,71 @@ class LiarAgent(BW4TBrain):
     def filter_observations(self, state):
         self._age += 1
         agent_name = state[self.agent_id]['obj_id']
+        headers = ['agent', 'rating', 'age']
 
-        if len(self._teamMembers) == 0:
-            for member in state['World']['team_members']:
-                if member != agent_name and member not in self._teamMembers:
-                    self._teamMembers.append(member)
-                    self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+        with open("agents1/agent4.csv", 'w', newline="") as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=headers)
+            reader = csv.DictReader(csv_file, fieldnames=headers)
+            writer.writeheader()
 
-        if self._age % 25 == 0:
-            self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
+            if len(self._teamMembers) == 0:
+                for member in state['World']['team_members']:
+                    if member != agent_name and member not in self._teamMembers:
+                        self._teamMembers.append(member)
+                        self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+                        writer.writerow({'agent': member, 'rating': 0.5, 'age': self._age})
 
-        closest_agents = state.get_closest_agents()
-        if closest_agents is not None:
-            for item in closest_agents:
-                name = item['name']
-                location = item['location']
-                is_carrying = []
-                if len(item['is_carrying']) > 0:
-                    for block in item['is_carrying']:
-                        block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
-                                 "colour": block['visualization']["colour"]}
-                        is_carrying.append(block)
-                self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
-                                                  'age': self._age}
-                if self._goalsInitialized:
-                    self._sendMassage('status of ' + name + ': location: '
-                                      + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
-                else:
-                    self._sendMessage('status of ' + name + ': location: '
-                                      + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
+            if len(self._teamMembers) == 0:
+                for member in state['World']['team_members']:
+                    if member != agent_name and member not in self._teamMembers:
+                        self._teamMembers.append(member)
+                        self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
 
-        receivedMessages = self._processMessages(self._teamMembers)
+            if self._age % 25 == 0:
+                self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
 
-        for member in self._teamMembers:
-            if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
-                    self._teamObservedStatus[member] = None
+            closest_agents = state.get_closest_agents()
+            if closest_agents is not None:
+                for item in closest_agents:
+                    name = item['name']
+                    location = item['location']
+                    is_carrying = []
+                    if len(item['is_carrying']) > 0:
+                        for block in item['is_carrying']:
+                            block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
+                                     "colour": block['visualization']["colour"]}
+                            is_carrying.append(block)
+                    self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
+                                                      'age': self._age}
+                    if self._goalsInitialized:
+                        self._sendMassage('status of ' + name + ': location: '
+                                          + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
+                    else:
+                        self._sendMessage('status of ' + name + ': location: '
+                                          + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
 
-        for member in self._teamMembers:
-            for message in receivedMessages[member]:
-                self._parseMessage(message, member, agent_name)
+            receivedMessages = self._processMessages(self._teamMembers)
 
-        # Update trust beliefs for team members
-        self._trustBlief(agent_name, state)
-        return state
+            for member in self._teamMembers:
+                if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
+                    if self._age - self._teamObservedStatus[member]['age'] > delete_age:
+                        self._teamObservedStatus[member] = None
+
+            for member in self._teamMembers:
+                for message in receivedMessages[member]:
+                    self._parseMessage(message, member, agent_name)
+
+            # Update trust beliefs for team members
+            self._trustBlief(agent_name, state)
+            csv_file.close()
+
+            df = pd.read_csv("agents1/agent4.csv")
+            loc = 0
+            for member in self._teamMembers:
+                df.loc[loc, 'age'] = self._age
+                df.loc[loc, 'rating'] = self._trustBeliefs[member]['rating']
+                loc += 1
+            return state
 
     def decide_on_bw4t_action(self, state: State):
         if not self._goalsInitialized:
