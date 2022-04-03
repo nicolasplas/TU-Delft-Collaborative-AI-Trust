@@ -11,7 +11,8 @@ from matrx.actions.object_actions import GrabObject, DropObject
 from matrx.messages.message import Message
 from matrx.actions.action import Action
 
-Trust_Level = 0.7
+Trust_Level = 0.75
+delete_age = 8
 
 
 def findRoom(location, state):
@@ -20,6 +21,8 @@ def findRoom(location, state):
     for item in rooms:
         if item['location'] == location:
             room = item['room_name'].split('_')[1]
+            print('found room')
+            break
 
     return room
 
@@ -100,7 +103,7 @@ class BaseAgent(BW4TBrain):
 
         for member in self._teamMembers:
             if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
                     self._teamObservedStatus[member] = None
 
         for member in self._teamMembers:
@@ -518,7 +521,7 @@ class BaseAgent(BW4TBrain):
 
         theta = 0.17
         mu = 0.5
-        increment = 0.03
+        increment = 0.01
 
         for member in self._teamMembers:
             if member not in self._teamStatus or member not in self._teamObservedStatus:
@@ -527,27 +530,15 @@ class BaseAgent(BW4TBrain):
             rating = self._trustBeliefs[member]['rating']
             if self._teamObservedStatus[member] is not None and self._teamStatus[member]['action'] == 'searching':
                 if self._teamObservedStatus[member] is not None:
-                    # print(member)
-                    # print('is in room' + str(findRoom(self._teamObservedStatus[member]['location'], state)))
-                    # print('says it is in room' + str(self._teamStatus[member]['room']))
                     if findRoom(self._teamObservedStatus[member]['location'], state) == self._teamStatus[member][
                         'room']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                        # print('trust increased')
-                    else:
-                        if self._age - self._teamObservedStatus[member]['age'] > 8:
-                            rating -= \
-                                3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                                 math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                            # print('trust decreased')
+
             elif self._teamStatus[member]['action'] == 'carrying':
                 if self._teamObservedStatus[member] is not None and len(
                         self._teamObservedStatus[member]['is_carrying']) > 0:
-                    # print(member)
-                    # print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
-                    # print('says it is carrying' + str(self._teamStatus[member]['block']))
                     if self._teamStatus[member]['block'] in self._teamObservedStatus[member]['is_carrying']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
@@ -556,7 +547,7 @@ class BaseAgent(BW4TBrain):
 
                     else:
                         rating -= \
-                            3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                            10 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                              math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust decreased')
             if rating < 0:
@@ -650,8 +641,10 @@ class BaseAgent(BW4TBrain):
                 for item in trust_beliefs:
                     if item == myself:
                         continue
-                    self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item]['rating']
-                                                          * self._trustBeliefs[member]['rating']) / (1 + self._trustBeliefs[member]['rating'])
+                    self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item][
+                        'rating']
+                                                          * self._trustBeliefs[member]['rating']) / (
+                                                                     1 + self._trustBeliefs[member]['rating'])
 
 
 class StrongAgent(BW4TBrain):
@@ -714,7 +707,7 @@ class StrongAgent(BW4TBrain):
 
         for member in self._teamMembers:
             if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
                     self._teamObservedStatus[member] = None
 
         for member in self._teamMembers:
@@ -751,7 +744,8 @@ class StrongAgent(BW4TBrain):
                         count += 1
                 if count == 0:
                     for g in self._goalBlocks:
-                        if len(self.state.get_self()['is_carrying']) == 1 and  o['visualization']['shape'] == self._carryingO['visualization']['shape'] and o['visualization'][
+                        if len(self.state.get_self()['is_carrying']) == 1 and o['visualization']['shape'] == \
+                                self._carryingO['visualization']['shape'] and o['visualization'][
                             'colour'] == \
                                 self._carryingO['visualization']['colour']:
                             continue
@@ -1174,7 +1168,7 @@ class StrongAgent(BW4TBrain):
 
         theta = 0.17
         mu = 0.5
-        increment = 0.03
+        increment = 0.01
 
         for member in self._teamMembers:
             if member not in self._teamStatus or member not in self._teamObservedStatus:
@@ -1183,21 +1177,12 @@ class StrongAgent(BW4TBrain):
             rating = self._trustBeliefs[member]['rating']
             if self._teamObservedStatus[member] is not None and self._teamStatus[member]['action'] == 'searching':
                 if self._teamObservedStatus[member] is not None:
-                    # print(member)
-                    # print('is in room' + str(findRoom(self._teamObservedStatus[member]['location'], state)))
-                    # print('says it is in room' + str(self._teamStatus[member]['room']))
                     if findRoom(self._teamObservedStatus[member]['location'], state) == self._teamStatus[member][
                         'room']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                        # print('trust increased')
-                    else:
-                        if self._age - self._teamObservedStatus[member]['age'] > 8:
-                            rating -= \
-                                3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                                 math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                            # print('trust decreased')
+
             elif self._teamStatus[member]['action'] == 'carrying':
                 if self._teamObservedStatus[member] is not None and len(
                         self._teamObservedStatus[member]['is_carrying']) > 0:
@@ -1212,7 +1197,7 @@ class StrongAgent(BW4TBrain):
 
                     else:
                         rating -= \
-                            3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                            10 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                              math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust decreased')
             if rating < 0:
@@ -1309,7 +1294,7 @@ class StrongAgent(BW4TBrain):
                         self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item][
                             'rating']
                                                               * self._trustBeliefs[member]['rating']) / (
-                                                                         1 + self._trustBeliefs[member]['rating'])
+                                                                     1 + self._trustBeliefs[member]['rating'])
 
 
 class ColorblindAgent(BW4TBrain):
@@ -1370,7 +1355,7 @@ class ColorblindAgent(BW4TBrain):
 
         for member in self._teamMembers:
             if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
                     self._teamObservedStatus[member] = None
 
         for member in self._teamMembers:
@@ -1764,7 +1749,7 @@ class ColorblindAgent(BW4TBrain):
 
         theta = 0.17
         mu = 0.5
-        increment = 0.03
+        increment = 0.01
 
         for member in self._teamMembers:
             if member not in self._teamStatus or member not in self._teamObservedStatus:
@@ -1773,21 +1758,12 @@ class ColorblindAgent(BW4TBrain):
             rating = self._trustBeliefs[member]['rating']
             if self._teamObservedStatus[member] is not None and self._teamStatus[member]['action'] == 'searching':
                 if self._teamObservedStatus[member] is not None:
-                    # print(member)
-                    # print('is in room' + str(findRoom(self._teamObservedStatus[member]['location'], state)))
-                    # print('says it is in room' + str(self._teamStatus[member]['room']))
                     if findRoom(self._teamObservedStatus[member]['location'], state) == self._teamStatus[member][
                         'room']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                        # print('trust increased')
-                    else:
-                        if self._age - self._teamObservedStatus[member]['age'] > 8:
-                            rating -= \
-                                3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                                 math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                            # print('trust decreased')
+
             elif self._teamStatus[member]['action'] == 'carrying':
                 if self._teamObservedStatus[member] is not None and len(
                         self._teamObservedStatus[member]['is_carrying']) > 0:
@@ -1802,7 +1778,7 @@ class ColorblindAgent(BW4TBrain):
 
                     else:
                         rating -= \
-                            3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                            10 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                              math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust decreased')
             if rating < 0:
@@ -1898,8 +1874,10 @@ class ColorblindAgent(BW4TBrain):
                 for item in trust_beliefs:
                     if item == myself:
                         continue
-                    self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item]['rating']
-                                                          * self._trustBeliefs[member]['rating']) / (1 + self._trustBeliefs[member]['rating'])
+                    self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item][
+                        'rating']
+                                                          * self._trustBeliefs[member]['rating']) / (
+                                                                     1 + self._trustBeliefs[member]['rating'])
 
 
 class LazyAgent(BW4TBrain):
@@ -1962,7 +1940,7 @@ class LazyAgent(BW4TBrain):
 
         for member in self._teamMembers:
             if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
                     self._teamObservedStatus[member] = None
 
         for member in self._teamMembers:
@@ -2429,7 +2407,7 @@ class LazyAgent(BW4TBrain):
 
         theta = 0.17
         mu = 0.5
-        increment = 0.03
+        increment = 0.01
 
         for member in self._teamMembers:
             if member not in self._teamStatus or member not in self._teamObservedStatus:
@@ -2437,22 +2415,11 @@ class LazyAgent(BW4TBrain):
             self._trustBeliefs[member]['age'] = self._age
             rating = self._trustBeliefs[member]['rating']
             if self._teamObservedStatus[member] is not None and self._teamStatus[member]['action'] == 'searching':
-                if self._teamObservedStatus[member] is not None:
-                    # print(member)
-                    # print('is in room' + str(findRoom(self._teamObservedStatus[member]['location'], state)))
-                    # print('says it is in room' + str(self._teamStatus[member]['room']))
                     if findRoom(self._teamObservedStatus[member]['location'], state) == self._teamStatus[member][
                         'room']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                        # print('trust increased')
-                    else:
-                        if self._age - self._teamObservedStatus[member]['age'] > 8:
-                            rating -= \
-                                3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                                 math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                            # print('trust decreased')
             elif self._teamStatus[member]['action'] == 'carrying':
                 if self._teamObservedStatus[member] is not None and len(
                         self._teamObservedStatus[member]['is_carrying']) > 0:
@@ -2467,7 +2434,7 @@ class LazyAgent(BW4TBrain):
 
                     else:
                         rating -= \
-                            3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                            10 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                              math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust decreased')
             if rating < 0:
@@ -2563,8 +2530,10 @@ class LazyAgent(BW4TBrain):
                 for item in trust_beliefs:
                     if item == myself:
                         continue
-                    self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item]['rating']
-                                                          * self._trustBeliefs[member]['rating']) / (1 + self._trustBeliefs[member]['rating'])
+                    self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item][
+                        'rating']
+                                                          * self._trustBeliefs[member]['rating']) / (
+                                                                     1 + self._trustBeliefs[member]['rating'])
 
 
 class LiarAgent(BW4TBrain):
@@ -2629,7 +2598,7 @@ class LiarAgent(BW4TBrain):
 
         for member in self._teamMembers:
             if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
                     self._teamObservedStatus[member] = None
 
         for member in self._teamMembers:
@@ -3056,7 +3025,7 @@ class LiarAgent(BW4TBrain):
 
         theta = 0.17
         mu = 0.5
-        increment = 0.03
+        increment = 0.01
 
         for member in self._teamMembers:
             if member not in self._teamStatus or member not in self._teamObservedStatus:
@@ -3065,38 +3034,23 @@ class LiarAgent(BW4TBrain):
             rating = self._trustBeliefs[member]['rating']
             if self._teamObservedStatus[member] is not None and self._teamStatus[member]['action'] == 'searching':
                 if self._teamObservedStatus[member] is not None:
-                    # print(member)
-                    # print('is in room' + str(findRoom(self._teamObservedStatus[member]['location'], state)))
-                    # print('says it is in room' + str(self._teamStatus[member]['room']))
                     if findRoom(self._teamObservedStatus[member]['location'], state) == self._teamStatus[member][
-                        'room']:
+                            'room']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                        # print('trust increased')
-                    else:
-                        if self._age - self._teamObservedStatus[member]['age'] > 8:
-                            rating -= \
-                                3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                                 math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                            # print('trust decreased')
+
             elif self._teamStatus[member]['action'] == 'carrying':
                 if self._teamObservedStatus[member] is not None and len(
                         self._teamObservedStatus[member]['is_carrying']) > 0:
-                    # print(member)
-                    # print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
-                    # print('says it is carrying' + str(self._teamStatus[member]['block']))
                     if self._teamStatus[member]['block'] in self._teamObservedStatus[member]['is_carrying']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                        # print('trust increased')
-
                     else:
                         rating -= \
-                            3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                            10 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                              math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                        # print('trust decreased')
             if rating < 0:
                 rating = 0
             if rating > 1:
@@ -3190,8 +3144,10 @@ class LiarAgent(BW4TBrain):
                 for item in trust_beliefs:
                     if item == myself:
                         continue
-                    self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item]['rating']
-                                                          * self._trustBeliefs[member]['rating']) / (1 + self._trustBeliefs[member]['rating'])
+                    self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item][
+                        'rating']
+                                                          * self._trustBeliefs[member]['rating']) / (
+                                                                     1 + self._trustBeliefs[member]['rating'])
 
     def _generateLie(self):
         rand = random.randint(1, 6)
