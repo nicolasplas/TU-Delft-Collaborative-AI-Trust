@@ -12,6 +12,7 @@ from matrx.messages.message import Message
 from matrx.actions.action import Action
 
 Trust_Level = 0.7
+delete_age = 12
 
 
 def findRoom(location, state):
@@ -100,7 +101,7 @@ class BaseAgent(BW4TBrain):
 
         for member in self._teamMembers:
             if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
                     self._teamObservedStatus[member] = None
 
         for member in self._teamMembers:
@@ -689,7 +690,7 @@ class StrongAgent(BW4TBrain):
 
         for member in self._teamMembers:
             if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
                     self._teamObservedStatus[member] = None
 
         for member in self._teamMembers:
@@ -1315,7 +1316,7 @@ class ColorblindAgent(BW4TBrain):
 
         for member in self._teamMembers:
             if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
                     self._teamObservedStatus[member] = None
 
         for member in self._teamMembers:
@@ -1881,7 +1882,7 @@ class LazyAgent(BW4TBrain):
 
         for member in self._teamMembers:
             if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
                     self._teamObservedStatus[member] = None
 
         for member in self._teamMembers:
@@ -2520,7 +2521,7 @@ class LiarAgent(BW4TBrain):
 
         for member in self._teamMembers:
             if member in self._teamObservedStatus and self._teamObservedStatus[member] is not None:
-                if self._age - self._teamObservedStatus[member]['age'] > 5:
+                if self._age - self._teamObservedStatus[member]['age'] > delete_age:
                     self._teamObservedStatus[member] = None
 
         for member in self._teamMembers:
