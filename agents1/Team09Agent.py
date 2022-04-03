@@ -130,6 +130,7 @@ class BaseAgent(BW4TBrain):
                 df.loc[loc, 'age'] = self._age
                 df.loc[loc, 'rating'] = self._trustBeliefs[member]['rating']
                 loc += 1
+            df.to_csv("agents1/agents.csv", index = False)
             return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -732,6 +733,7 @@ class StrongAgent(BW4TBrain):
                 df.loc[loc, 'age'] = self._age
                 df.loc[loc, 'rating'] = self._trustBeliefs[member]['rating']
                 loc += 1
+            df.to_csv("agents1/agent1.csv", index = False)
             return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -1373,6 +1375,7 @@ class ColorblindAgent(BW4TBrain):
                 df.loc[loc, 'age'] = self._age
                 df.loc[loc, 'rating'] = self._trustBeliefs[member]['rating']
                 loc += 1
+            df.to_csv("agents1/agent2.csv", index=False)
             return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -1953,6 +1956,7 @@ class LazyAgent(BW4TBrain):
                 df.loc[loc, 'age'] = self._age
                 df.loc[loc, 'rating'] = self._trustBeliefs[member]['rating']
                 loc += 1
+            df.to_csv("agents1/agent3.csv", index=False)
             return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -2626,6 +2630,8 @@ class LiarAgent(BW4TBrain):
                 df.loc[loc, 'age'] = self._age
                 df.loc[loc, 'rating'] = self._trustBeliefs[member]['rating']
                 loc += 1
+            df.to_csv("agents1/agent4.csv", index=False)
+
             return state
 
     def decide_on_bw4t_action(self, state: State):
