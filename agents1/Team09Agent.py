@@ -86,7 +86,9 @@ class BaseAgent(BW4TBrain):
                 is_carrying = []
                 if len(item['is_carrying']) > 0:
                     for block in item['is_carrying']:
-                        is_carrying.append(block['visualization'])
+                        block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
+                                 "colour": block['visualization']["colour"]}
+                        is_carrying.append(block)
                 self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
                                                   'age': self._age}
                 self._sendMessage('status of ' + name + ': location: '
@@ -506,7 +508,7 @@ class BaseAgent(BW4TBrain):
                     else:
                         if self._age - self._teamObservedStatus[member]['age'] > 10:
                             rating -= \
-                                increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                              math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                             # print('trust decreased')
             elif self._teamStatus[member]['action'] == 'carrying':
@@ -515,7 +517,7 @@ class BaseAgent(BW4TBrain):
                     # print(member)
                     # print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
                     # print('says it is carrying' + str(self._teamStatus[member]['block']))
-                    if self._teamObservedStatus[member]['is_carrying'][0] == self._teamStatus[member]['block']:
+                    if self._teamStatus[member]['block'] in self._teamObservedStatus[member]['is_carrying']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
@@ -523,7 +525,7 @@ class BaseAgent(BW4TBrain):
 
                     else:
                         rating -= \
-                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                           3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust decreased')
             if rating < 0:
@@ -656,7 +658,9 @@ class StrongAgent(BW4TBrain):
                 is_carrying = []
                 if len(item['is_carrying']) > 0:
                     for block in item['is_carrying']:
-                        is_carrying.append(block['visualization'])
+                        block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
+                                 "colour": block['visualization']["colour"]}
+                        is_carrying.append(block)
                 self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
                                                   'age': self._age}
                 self._sendMessage('status of ' + name + ': location: '
@@ -1108,7 +1112,7 @@ class StrongAgent(BW4TBrain):
                     else:
                         if self._age - self._teamObservedStatus[member]['age'] > 10:
                             rating -= \
-                                increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                              math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                             # print('trust decreased')
             elif self._teamStatus[member]['action'] == 'carrying':
@@ -1117,7 +1121,7 @@ class StrongAgent(BW4TBrain):
                     # print(member)
                     # print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
                     # print('says it is carrying' + str(self._teamStatus[member]['block']))
-                    if self._teamObservedStatus[member]['is_carrying'][0] == self._teamStatus[member]['block']:
+                    if self._teamStatus[member]['block'] in self._teamObservedStatus[member]['is_carrying']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
@@ -1125,7 +1129,7 @@ class StrongAgent(BW4TBrain):
 
                     else:
                         rating -= \
-                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                            3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust decreased')
             if rating < 0:
@@ -1255,9 +1259,9 @@ class ColorblindAgent(BW4TBrain):
                 is_carrying = []
                 if len(item['is_carrying']) > 0:
                     for block in item['is_carrying']:
-                        visualization = block['visualization']
-                        visualization['Colour'] = ""
-                        is_carrying.append(visualization)
+                        block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
+                                 "colour": block['visualization']["colour"]}
+                        is_carrying.append(block)
                 self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
                                                   'age': self._age}
                 self._sendMessage('status of ' + name + ': location: '
@@ -1654,7 +1658,7 @@ class ColorblindAgent(BW4TBrain):
                     else:
                         if self._age - self._teamObservedStatus[member]['age'] > 10:
                             rating -= \
-                                increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                              math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                             # print('trust decreased')
             elif self._teamStatus[member]['action'] == 'carrying':
@@ -1663,7 +1667,7 @@ class ColorblindAgent(BW4TBrain):
                     # print(member)
                     # print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
                     # print('says it is carrying' + str(self._teamStatus[member]['block']))
-                    if self._teamObservedStatus[member]['is_carrying'][0] == self._teamStatus[member]['block']:
+                    if self._teamStatus[member]['block'] in self._teamObservedStatus[member]['is_carrying']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
@@ -1671,7 +1675,7 @@ class ColorblindAgent(BW4TBrain):
 
                     else:
                         rating -= \
-                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                            3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust decreased')
             if rating < 0:
@@ -1803,7 +1807,9 @@ class LazyAgent(BW4TBrain):
                 is_carrying = []
                 if len(item['is_carrying']) > 0:
                     for block in item['is_carrying']:
-                        is_carrying.append(block['visualization'])
+                        block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
+                                 "colour": block['visualization']["colour"]}
+                        is_carrying.append(block)
                 self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
                                                   'age': self._age}
                 self._sendMessage('status of ' + name + ': location: '
@@ -2273,7 +2279,7 @@ class LazyAgent(BW4TBrain):
                     else:
                         if self._age - self._teamObservedStatus[member]['age'] > 10:
                             rating -= \
-                                increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                              math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                             #print('trust decreased')
             elif self._teamStatus[member]['action'] == 'carrying':
@@ -2282,7 +2288,7 @@ class LazyAgent(BW4TBrain):
                     #print(member)
                     #print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
                     #print('says it is carrying' + str(self._teamStatus[member]['block']))
-                    if self._teamObservedStatus[member]['is_carrying'][0] == self._teamStatus[member]['block']:
+                    if self._teamStatus[member]['block'] in self._teamObservedStatus[member]['is_carrying']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
@@ -2290,7 +2296,7 @@ class LazyAgent(BW4TBrain):
 
                     else:
                         rating -= \
-                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                            3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         #print('trust decreased')
             if rating < 0:
@@ -2419,7 +2425,9 @@ class LiarAgent(BW4TBrain):
                 is_carrying = []
                 if len(item['is_carrying']) > 0:
                     for block in item['is_carrying']:
-                        is_carrying.append(block['visualization'])
+                        block = {"size": block['visualization']['size'], "shape": block['visualization']["shape"],
+                                 "colour": block['visualization']["colour"]}
+                        is_carrying.append(block)
                 self._teamObservedStatus[name] = {'location': location, 'is_carrying': is_carrying,
                                                   'age': self._age}
                 if self._goalsInitialized:
@@ -2849,7 +2857,7 @@ class LiarAgent(BW4TBrain):
                     else:
                         if self._age - self._teamObservedStatus[member]['age'] > 10:
                             rating -= \
-                                increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                              math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                             # print('trust decreased')
             elif self._teamStatus[member]['action'] == 'carrying':
@@ -2858,7 +2866,10 @@ class LiarAgent(BW4TBrain):
                     # print(member)
                     # print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
                     # print('says it is carrying' + str(self._teamStatus[member]['block']))
-                    if self._teamObservedStatus[member]['is_carrying'][0] == self._teamStatus[member]['block']:
+                    if member == 'agent2':
+                        print(self._teamStatus[member]['block'])
+                        print(self._teamObservedStatus[member]['is_carrying'])
+                    if self._teamStatus[member]['block'] in self._teamObservedStatus[member]['is_carrying']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
@@ -2866,7 +2877,7 @@ class LiarAgent(BW4TBrain):
 
                     else:
                         rating -= \
-                            increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                            3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust decreased')
             if rating < 0:
