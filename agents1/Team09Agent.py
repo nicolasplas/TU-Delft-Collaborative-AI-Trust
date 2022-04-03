@@ -21,7 +21,6 @@ def findRoom(location, state):
     for item in rooms:
         if item['location'] == location:
             room = item['room_name'].split('_')[1]
-            print('found room')
             break
 
     return room
@@ -128,7 +127,7 @@ class BaseAgent(BW4TBrain):
             if member != agent_name and member not in self._teamMembers:
                 self._teamMembers.append(member)
 
-        # Check if there are objects laying around the agent.
+        # Check if there are objects lying around the agent.
         objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
         if objects is not None:
             for o in objects:
@@ -142,7 +141,8 @@ class BaseAgent(BW4TBrain):
                             'colour'] == \
                                 g['visualization']['colour'] and len(o['carried_by']) == 0:
                             print("Agent: " + agent_name + " found a goal block in the wildL: " + str(o['location']))
-                            self._possibleGoalBLocks.append(o['location'])
+                            if o['location'] not in self._possibleGoalBLocks:
+                                self._possibleGoalBLocks.append(o['location'])
                             self._sendMessage('Found goal block {\"size\": ' + str(
                                 o['visualization']['size']) + ', \"shape\": ' + str(
                                 o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -580,8 +580,9 @@ class BaseAgent(BW4TBrain):
                 for g in self.state.get_with_property({'is_goal_block': True}):
                     if tupl == g['location']:
                         isgoal = True
-                if not isgoal:
+                if not isgoal and tupl not in self._possibleGoalBLocks:
                     print("Agent " + self.agent_name + " is adding a goal block to the list because agent " + member + " told them to")
+                    print(str(self._possibleGoalBLocks))
                     self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
@@ -753,7 +754,8 @@ class StrongAgent(BW4TBrain):
                             'colour'] == \
                                 g['visualization']['colour'] and len(o['carried_by']) == 0:
                             print("Agent: " + agent_name + " found a goal block in the wildL: " + str(o['location']))
-                            self._possibleGoalBLocks.append(o['location'])
+                            if o['location'] not in self._possibleGoalBLocks:
+                                self._possibleGoalBLocks.append(o['location'])
                             self._sendMessage('Found goal block {\"size\": ' + str(
                                 o['visualization']['size']) + ', \"shape\": ' + str(
                                 o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -1230,9 +1232,11 @@ class StrongAgent(BW4TBrain):
                 for g in self.state.get_with_property({'is_goal_block': True}):
                     if tupl == g['location']:
                         isgoal = True
-                if not isgoal:
+                if not isgoal and tupl not in self._possibleGoalBLocks:
                     print("Agent " + self.agent_name + " is adding a goal block to the list because agent " + member + " told them to")
+
                     self._possibleGoalBLocks.append(tupl)
+                    print(str(self._possibleGoalBLocks))
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
@@ -1811,10 +1815,12 @@ class ColorblindAgent(BW4TBrain):
                 for g in self.state.get_with_property({'is_goal_block': True}):
                     if tupl == g['location']:
                         isgoal = True
-                if not isgoal:
+                if not isgoal and tupl not in self._possibleGoalBLocks:
                     print(
                         "Agent " + self.agent_name + " is adding a goal block to the list because agent " + member + " told them to")
+
                     self._possibleGoalBLocks.append(tupl)
+                    print(str(self._possibleGoalBLocks))
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
@@ -1981,7 +1987,8 @@ class LazyAgent(BW4TBrain):
                             'colour'] == \
                                 g['visualization']['colour'] and len(o['carried_by']) == 0:
                             print("Agent: " + agent_name + " found a goal block in the wildL: " + str(o['location']))
-                            self._possibleGoalBLocks.append(o['location'])
+                            if o['location'] not in self._possibleGoalBLocks:
+                                self._possibleGoalBLocks.append(o['location'])
                             self._sendMessage('Found goal block {\"size\": ' + str(
                                 o['visualization']['size']) + ', \"shape\": ' + str(
                                 o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -2467,10 +2474,12 @@ class LazyAgent(BW4TBrain):
                 for g in self.state.get_with_property({'is_goal_block': True}):
                     if tupl == g['location']:
                         isgoal = True
-                if not isgoal:
+                if not isgoal and tupl not in self._possibleGoalBLocks:
                     print(
                         "Agent " + self.agent_name + " is adding a goal block to the list because agent " + member + " told them to")
+
                     self._possibleGoalBLocks.append(tupl)
+                    print(str(self._possibleGoalBLocks))
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
@@ -2644,7 +2653,8 @@ class LiarAgent(BW4TBrain):
                             'colour'] == \
                                 g['visualization']['colour'] and len(o['carried_by']) == 0:
                             print("Agent: " + agent_name + " found a goal block in the wildL: " + str(o['location']))
-                            self._possibleGoalBLocks.append(o['location'])
+                            if o['location'] not in self._possibleGoalBLocks:
+                                self._possibleGoalBLocks.append(o['location'])
                             self._sendMassage('Found goal block {\"size\": ' + str(
                                 o['visualization']['size']) + ', \"shape\": ' + str(
                                 o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -3081,10 +3091,12 @@ class LiarAgent(BW4TBrain):
                 for g in self.state.get_with_property({'is_goal_block': True}):
                     if tupl == g['location']:
                         isgoal = True
-                if not isgoal:
+                if not isgoal and tupl not in self._possibleGoalBLocks:
                     print(
                         "Agent " + self.agent_name + " is adding a goal block to the list because agent " + member + " told them to")
+
                     self._possibleGoalBLocks.append(tupl)
+                    print(str(self._possibleGoalBLocks))
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
             block = '{' + block.split('}')[0] + '}'
