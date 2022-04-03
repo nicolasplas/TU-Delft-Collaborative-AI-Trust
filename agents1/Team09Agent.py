@@ -651,7 +651,6 @@ class StrongAgent(BW4TBrain):
         self._checkGoals = []
         self._possibleGoalBLocks = []
         self._notExplored = []
-        self._carryingCount = 0
         self._trustBeliefs = {}
         self._teamStatus = {}
         self._teamObservedStatus = {}
@@ -726,6 +725,10 @@ class StrongAgent(BW4TBrain):
                         count += 1
                 if count == 0:
                     for g in self._goalBlocks:
+                        if len(self.state.get_self()['is_carrying']) == 1 and  o['visualization']['shape'] == self._carryingO['visualization']['shape'] and o['visualization'][
+                            'colour'] == \
+                                self._carryingO['visualization']['colour']:
+                            continue
                         if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
                             'colour'] == \
                                 g['visualization']['colour'] and len(o['carried_by']) == 0:
@@ -809,7 +812,7 @@ class StrongAgent(BW4TBrain):
                                     o['visualization']['shape']) + ', \"colour\": \"' + str(
                                     o['visualization']['colour']) + '\"} at location ' + str(
                                     o['location']), agent_name)
-                                if self._carryingCount == 1:
+                                if len(self.state.get_self()['is_carrying']) == 1:
                                     self._phase = Phase.FOLLOW_PATH_TO_DROP
                                     self._navigator.reset_full()
                                     self._navigator.add_waypoints([g['location']])
@@ -831,7 +834,6 @@ class StrongAgent(BW4TBrain):
                                         self._navigator.reset_full()
                                         self._navigator.add_waypoints([block])
                                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
-                                self._carryingCount += 1
                                 action = GrabObject.__name__
                                 action_kwargs = {}
                                 action_kwargs['object_id'] = o['obj_id']
@@ -854,7 +856,7 @@ class StrongAgent(BW4TBrain):
                 self._phase = Phase.DROP_OBJECT
 
             if Phase.DROP_OBJECT == self._phase:
-                self._sendMessage('Carry count ' + str(self._carryingCount), agent_name)
+                self._sendMessage('Carry count ' + str(len(self.state.get_self()['is_carrying'])), agent_name)
 
                 # If there already is a block in this location, move to a different location and drop the block there.
                 objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
@@ -873,14 +875,14 @@ class StrongAgent(BW4TBrain):
                     self.state.get_self()['location']),
                                   agent_name)
 
-                if self._carryingCount == 2:
+                if len(self.state.get_self()['is_carrying']) == 2:
                     self._goalBlocks.remove(self._carrying2)
                     self._phase = Phase.FOLLOW_PATH_TO_DROP
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([self._carrying['location']])
                     self._carrying2 = None
                     self._carryingO2 = None
-                if self._carryingCount == 1:
+                if len(self.state.get_self()['is_carrying']) == 1:
                     self._goalBlocks.remove(self._carrying)
                     self._carrying = None
                     self._carryingO = None
@@ -905,7 +907,6 @@ class StrongAgent(BW4TBrain):
                         self._goalBlocks = state.get_with_property({'is_goal_block': True})
                         self._phase = Phase.CHECK_GOALS
 
-                self._carryingCount -= 1
                 return DropObject.__name__, {}
 
             if Phase.CHECK_GOALS == self._phase:
@@ -1045,7 +1046,6 @@ class StrongAgent(BW4TBrain):
                                 self._navigator.add_waypoints([next['location']])
                 self._checkGoals.remove(goal)
 
-            # TODO: Has not been tested, since it does not parse messages yet
             if Phase.MOVING_TO_KNOWN_BLOCK == self._phase:
                 self._state_tracker.update(state)
                 action = self._navigator.get_move_action(self._state_tracker)
@@ -1068,14 +1068,18 @@ class StrongAgent(BW4TBrain):
                                         o['visualization']['shape']) + ', \"colour\": \"' + str(
                                         o['visualization']['colour']) + '\"} at location ' + str(
                                         o['location']), agent_name)
+                                    if len(self.state.get_self()['is_carrying']) == 0:
+                                        self._carrying = g
+                                        self._carryingO = o
+                                    elif len(self.state.get_self()['is_carrying']) == 1:
+                                        self._carrying2 = g
+                                        self._carryingO2 = o
                                     self._phase = Phase.FOLLOW_PATH_TO_DROP
                                     self._navigator.reset_full()
                                     self._navigator.add_waypoints([g['location']])
                                     action = GrabObject.__name__
                                     action_kwargs = {}
                                     action_kwargs['object_id'] = o['obj_id']
-                                    self._carrying = g
-                                    self._carryingO = o
                                     return action, action_kwargs
                 self._possibleGoalBLocks.remove(self._possibleGoalBLocks[0])
                 if len(self._possibleGoalBLocks) == 0:
