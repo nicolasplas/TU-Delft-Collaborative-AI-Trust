@@ -123,8 +123,8 @@ class BaseAgent(BW4TBrain):
         for member in state['World']['team_members']:
             if member != agent_name and member not in self._teamMembers:
                 self._teamMembers.append(member)
-                # Process messages from team members
 
+        # Check if there are objects laying around the agent.
         objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
         if objects is not None:
             for o in objects:
@@ -169,6 +169,7 @@ class BaseAgent(BW4TBrain):
                 action = self._navigator.get_move_action(self._state_tracker)
                 if action != None:
                     return action, {}
+                # If the door is not open, open the door.
                 if self._door['is_open']:
                     self._phase = Phase.ENTERING_ROOM
                 else:
@@ -187,9 +188,11 @@ class BaseAgent(BW4TBrain):
             if Phase.ENTERING_ROOM == self._phase:
                 if self._door in self._notExplored:
                     self._notExplored.remove(self._door)
+                # Send message of action
                 self._sendMessage('Searching through ' + self._door['room_name'], agent_name)
                 self._navigator.reset_full()
                 objects = state.get_room_objects(self._door['room_name'])
+                # Add all traversable tiles as waypoints
                 for o in objects:
                     if o['is_traversable']:
                         self._navigator.add_waypoints([o['location']])
@@ -199,6 +202,7 @@ class BaseAgent(BW4TBrain):
                 self._state_tracker.update(state)
                 action = self._navigator.get_move_action(self._state_tracker)
                 objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
+                # If there is a goal block in the room pick it up and take it to the goal
                 if objects is not None:
                     for o in objects:
                         for g in self._goalBlocks:
@@ -224,6 +228,7 @@ class BaseAgent(BW4TBrain):
                                 return action, action_kwargs
                 if action != None:
                     return action, {}
+                # If you explored the entire room, find a new one or go to a known block
                 if len(self._possibleGoalBLocks) == 0:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                 else:
@@ -261,7 +266,7 @@ class BaseAgent(BW4TBrain):
                 self._goalBlocks.remove(self._carrying)
                 self._sendMessage('Removing block' + str(self._carrying) + ' from list: ' + str(self._goalBlocks),
                                   agent_name)
-
+                # If there are more goal blocks to find, update your goalblock list. Else check if it is a solution
                 if len(self._goalBlocks) >= 1:
                     self._sendMessage('Updating goal list with ' + str(len(self._goalBlocks)), agent_name)
                     self._phase = Phase.UPDATE_GOAL_LIST
@@ -287,6 +292,7 @@ class BaseAgent(BW4TBrain):
 
             if Phase.CHECK_GOALS == self._phase:
                 self._phase = Phase.FOLLOW_PATH_TO_GOAL
+                # If there was a wrong block on a goal, try and find a goal block
                 if len(self._goalsWrong) != 0:
                     if len(self._possibleGoalBLocks) == 0:
                         self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -296,6 +302,7 @@ class BaseAgent(BW4TBrain):
                         self._navigator.add_waypoints([block])
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
+                # If all goal blocks have been checked, try and find a goal block
                 if len(self._goalBlocks) == 0:
                     if len(self._possibleGoalBLocks) == 0:
                         self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -321,12 +328,14 @@ class BaseAgent(BW4TBrain):
                 if objects is not None:
                     for o in objects:
                         if o['location'] == self.state.get_self()['location']:
+                            # If the current goal location has the wrong block on it, remove it
                             if o['visualization']['shape'] != self._goalBlocks[0]['visualization']['shape'] or \
                                     o['visualization']['colour'] != self._goalBlocks[0]['visualization']['colour']:
                                 self._phase = Phase.PUT_AWAY_WRONG_BLOCK
                                 self._navigator.reset_full()
                                 self._navigator.add_waypoints(
                                     [[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
+                            # Pick up the goal block that is correct and then immediately drop it
                             else:
                                 self._carryingO = o
                                 self._phase = Phase.MOVE_GOAL_BLOCK
@@ -340,6 +349,7 @@ class BaseAgent(BW4TBrain):
                             action_kwargs = {}
                             action_kwargs['object_id'] = o['obj_id']
                             return action, action_kwargs
+                # Find a room or block
                 if len(self._possibleGoalBLocks) == 0:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                 else:
@@ -422,12 +432,12 @@ class BaseAgent(BW4TBrain):
                                 self._navigator.add_waypoints([next['location']])
                 self._checkGoals.remove(goal)
 
-            # TODO: Has not been tested, since it does not parse messages yet
             if Phase.MOVING_TO_KNOWN_BLOCK == self._phase:
                 self._state_tracker.update(state)
                 action = self._navigator.get_move_action(self._state_tracker)
                 if action != None:
                     return action, {}
+                # If the known block is a goal block, pick it up and bring it to the goal
                 objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
                 if objects is not None:
                     for o in objects:
@@ -702,6 +712,7 @@ class StrongAgent(BW4TBrain):
                 # Process messages from team members
         receivedMessages = self._processMessages(self._teamMembers)
 
+        # Check if there are objects lying around the agent.
         objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
         if objects is not None:
             for o in objects:
@@ -750,6 +761,7 @@ class StrongAgent(BW4TBrain):
                 action = self._navigator.get_move_action(self._state_tracker)
                 if action != None:
                     return action, {}
+                # If the door is not open, open the door.
                 if self._door['is_open']:
                     self._phase = Phase.ENTERING_ROOM
                 else:
@@ -768,9 +780,11 @@ class StrongAgent(BW4TBrain):
             if Phase.ENTERING_ROOM == self._phase:
                 if len(self._notExplored) != 0:
                     self._notExplored.remove(self._door)
+                # Send message of action
                 self._sendMessage('Searching through ' + self._door['room_name'], agent_name)
                 self._navigator.reset_full()
                 objects = state.get_room_objects(self._door['room_name'])
+                # Add all traversable tiles as waypoints
                 for o in objects:
                     if o['is_traversable']:
                         self._navigator.add_waypoints([o['location']])
@@ -780,6 +794,7 @@ class StrongAgent(BW4TBrain):
                 self._state_tracker.update(state)
                 action = self._navigator.get_move_action(self._state_tracker)
                 objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
+                # If there is a goal block in the room pick it up and take it to the goal
                 if objects is not None:
                     for o in objects:
                         for g in self._goalBlocks:
@@ -824,6 +839,7 @@ class StrongAgent(BW4TBrain):
                                 action_kwargs = {}
                                 action_kwargs['object_id'] = o['obj_id']
                                 return action, action_kwargs
+                # If you explored the entire room, find a new one or go to a known block
                 if action != None:
                     return action, {}
                 if len(self._possibleGoalBLocks) == 0:
@@ -881,6 +897,7 @@ class StrongAgent(BW4TBrain):
                         self._navigator.add_waypoints([block])
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
+                    # If there are more goal blocks to find, update your goalblock list. Else check if it is a solution
                     if len(self._goalBlocks) >= 1:
                         self._sendMessage('Updating goal list with ' + str(len(self._goalBlocks)), agent_name)
                         self._phase = Phase.UPDATE_GOAL_LIST
@@ -897,6 +914,7 @@ class StrongAgent(BW4TBrain):
 
             if Phase.CHECK_GOALS == self._phase:
                 self._phase = Phase.FOLLOW_PATH_TO_GOAL
+                # If there was a wrong block on a goal, try and find a goal block
                 if len(self._goalsWrong) != 0:
                     if len(self._possibleGoalBLocks) == 0:
                         self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -906,6 +924,7 @@ class StrongAgent(BW4TBrain):
                         self._navigator.add_waypoints([block])
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
+                # If all goal blocks have been checked, try and find a goal block
                 if len(self._goalBlocks) == 0:
                     if len(self._possibleGoalBLocks) == 0:
                         self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -931,12 +950,14 @@ class StrongAgent(BW4TBrain):
                 if objects is not None:
                     for o in objects:
                         if o['location'] == self.state.get_self()['location']:
+                            # If the current goal location has the wrong block on it, remove it
                             if o['visualization']['shape'] != self._goalBlocks[0]['visualization']['shape'] or \
                                     o['visualization']['colour'] != self._goalBlocks[0]['visualization']['colour']:
                                 self._phase = Phase.PUT_AWAY_WRONG_BLOCK
                                 self._navigator.reset_full()
                                 self._navigator.add_waypoints(
                                     [[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
+                            # Pick up the goal block that is correct and then immediately drop it
                             else:
                                 self._carryingO = o
                                 self._phase = Phase.MOVE_GOAL_BLOCK
@@ -950,6 +971,7 @@ class StrongAgent(BW4TBrain):
                             action_kwargs = {}
                             action_kwargs['object_id'] = o['obj_id']
                             return action, action_kwargs
+                # Find a room or block
                 if len(self._possibleGoalBLocks) == 0:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                 else:
@@ -1040,6 +1062,7 @@ class StrongAgent(BW4TBrain):
                 objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
                 if objects is not None:
                     for o in objects:
+                        # If the known block is a goal block, pick it up and bring it to the goal
                         if o['location'] == self._possibleGoalBLocks[0]:
                             for g in self._goalBlocks:
                                 if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
@@ -1313,6 +1336,7 @@ class ColorblindAgent(BW4TBrain):
                 # Process messages from team members
         receivedMessages = self._processMessages(self._teamMembers)
 
+        # Check if there are objects laying around the agent.
         objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
         if objects is not None:
             for o in objects:
@@ -1354,6 +1378,7 @@ class ColorblindAgent(BW4TBrain):
                 action = self._navigator.get_move_action(self._state_tracker)
                 if action != None:
                     return action, {}
+                # If the door is not open, open the door.
                 if self._door['is_open']:
                     self._phase = Phase.ENTERING_ROOM
                 else:
@@ -1372,9 +1397,11 @@ class ColorblindAgent(BW4TBrain):
             if Phase.ENTERING_ROOM == self._phase:
                 if self._door in self._notExplored:
                     self._notExplored.remove(self._door)
+                # Send message of action
                 self._sendMessage('Searching through ' + self._door['room_name'], agent_name)
                 self._navigator.reset_full()
                 objects = state.get_room_objects(self._door['room_name'])
+                # Add all traversable tiles as waypoints
                 for o in objects:
                     if o['is_traversable']:
                         self._navigator.add_waypoints([o['location']])
@@ -1384,6 +1411,7 @@ class ColorblindAgent(BW4TBrain):
                 self._state_tracker.update(state)
                 action = self._navigator.get_move_action(self._state_tracker)
                 objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
+                # If there is a goal block in the room send a message. Do not pick it up, because you can not see colour
                 if objects is not None:
                     for o in objects:
                         for g in self._goalBlocks:
@@ -1394,6 +1422,8 @@ class ColorblindAgent(BW4TBrain):
                                     o['location']), agent_name)
                 if action != None:
                     return action, {}
+
+                # If you explored the entire room, find a new one or go to a known block
                 if len(self._possibleGoalBLocks) == 0:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                 else:
@@ -1432,6 +1462,7 @@ class ColorblindAgent(BW4TBrain):
                 self._sendMessage('Removing block' + str(self._carrying) + ' from list: ' + str(self._goalBlocks),
                                   agent_name)
 
+                # If there are more goal blocks to find, update your goalblock list. Else check if it is a solution
                 if len(self._goalBlocks) >= 1:
                     self._sendMessage('Updating goal list with ' + str(len(self._goalBlocks)), agent_name)
                     self._phase = Phase.UPDATE_GOAL_LIST
@@ -1456,6 +1487,7 @@ class ColorblindAgent(BW4TBrain):
 
             if Phase.CHECK_GOALS == self._phase:
                 self._phase = Phase.FOLLOW_PATH_TO_GOAL
+                # If there was a wrong block on a goal, try and find a goal block
                 if len(self._goalsWrong) != 0:
                     if len(self._possibleGoalBLocks) == 0:
                         self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -1465,6 +1497,7 @@ class ColorblindAgent(BW4TBrain):
                         self._navigator.add_waypoints([block])
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
+                # If all goal blocks have been checked, try and find a goal block
                 if len(self._goalBlocks) == 0:
                     if len(self._possibleGoalBLocks) == 0:
                         self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -1490,11 +1523,13 @@ class ColorblindAgent(BW4TBrain):
                 if objects is not None:
                     for o in objects:
                         if o['location'] == self.state.get_self()['location']:
+                            # If the current goal location has the wrong block on it, remove it
                             if o['visualization']['shape'] != self._goalBlocks[0]['visualization']['shape']:
                                 self._phase = Phase.PUT_AWAY_WRONG_BLOCK
                                 self._navigator.reset_full()
                                 self._navigator.add_waypoints(
                                     [[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
+                            # Pick up the goal block that is correct and then immediately drop it
                             else:
                                 self._carryingO = o
                                 self._phase = Phase.MOVE_GOAL_BLOCK
@@ -1507,6 +1542,7 @@ class ColorblindAgent(BW4TBrain):
                             action_kwargs = {}
                             action_kwargs['object_id'] = o['obj_id']
                             return action, action_kwargs
+                # Find a room or block
                 if len(self._possibleGoalBLocks) == 0:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                 else:
@@ -1587,7 +1623,6 @@ class ColorblindAgent(BW4TBrain):
                                 self._navigator.add_waypoints([next['location']])
                 self._checkGoals.remove(goal)
 
-            # TODO: Has not been tested, since it does not parse messages yet
             if Phase.MOVING_TO_KNOWN_BLOCK == self._phase:
                 self._state_tracker.update(state)
                 action = self._navigator.get_move_action(self._state_tracker)
@@ -1596,6 +1631,7 @@ class ColorblindAgent(BW4TBrain):
                 objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
                 if objects is not None:
                     for o in objects:
+                        # If the known block is a goal block, pick it up and bring it to the goal
                         if o['location'] == self._possibleGoalBLocks[0]:
                             for g in self._goalBlocks:
                                 if o['visualization']['shape'] == g['visualization']['shape']:
@@ -1865,6 +1901,7 @@ class LazyAgent(BW4TBrain):
                 # Process messages from team members
         receivedMessages = self._processMessages(self._teamMembers)
 
+        # Check if there are objects laying around the agent.
         objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
         if objects is not None:
             for o in objects:
@@ -1921,6 +1958,7 @@ class LazyAgent(BW4TBrain):
                 if self._lazymoment:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                     return None, {}
+                # If the door is not open, open the door.
                 if self._door['is_open']:
                     self._phase = Phase.ENTERING_ROOM
                 else:
@@ -1942,8 +1980,10 @@ class LazyAgent(BW4TBrain):
             if Phase.ENTERING_ROOM == self._phase:
                 if self._door in self._notExplored:
                     self._notExplored.remove(self._door)
+                # Send message of action
                 self._sendMessage('Searching through ' + self._door['room_name'], agent_name)
                 self._navigator.reset_full()
+                # Add all traversable tiles as waypoints
                 objects = state.get_room_objects(self._door['room_name'])
                 for o in objects:
                     if o['is_traversable']:
@@ -1962,6 +2002,7 @@ class LazyAgent(BW4TBrain):
 
                 action = self._navigator.get_move_action(self._state_tracker)
                 objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
+                # If there is a goal block in the room pick it up and take it to the goal
                 if objects is not None:
                     for o in objects:
                         for g in self._goalBlocks:
@@ -1995,6 +2036,7 @@ class LazyAgent(BW4TBrain):
                 if action != None:
                     return action, {}
 
+                # If you explored the entire room, find a new one or go to a known block
                 if len(self._possibleGoalBLocks) == 0 or self._lazymoment:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                 else:
@@ -2049,6 +2091,7 @@ class LazyAgent(BW4TBrain):
                 self._sendMessage('Removing block' + str(self._carrying) + ' from list: ' + str(self._goalBlocks),
                                   agent_name)
 
+                # If there are more goal blocks to find, update your goalblock list. Else check if it is a solution
                 if len(self._goalBlocks) >= 1:
                     self._sendMessage('Updating goal list with ' + str(len(self._goalBlocks)), agent_name)
                     self._phase = Phase.UPDATE_GOAL_LIST
@@ -2073,6 +2116,7 @@ class LazyAgent(BW4TBrain):
 
             if Phase.CHECK_GOALS == self._phase:
                 self._phase = Phase.FOLLOW_PATH_TO_GOAL
+                # If there was a wrong block on a goal, try and find a goal block
                 if len(self._goalsWrong) != 0:
                     if len(self._possibleGoalBLocks) == 0:
                         self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -2082,6 +2126,7 @@ class LazyAgent(BW4TBrain):
                         self._navigator.add_waypoints([block])
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
+                # If all goal blocks have been checked, try and find a goal block
                 if len(self._goalBlocks) == 0:
                     if len(self._possibleGoalBLocks) == 0:
                         self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -2107,12 +2152,14 @@ class LazyAgent(BW4TBrain):
                 if objects is not None:
                     for o in objects:
                         if o['location'] == self.state.get_self()['location']:
+                            # If the current goal location has the wrong block on it, remove it
                             if o['visualization']['shape'] != self._goalBlocks[0]['visualization']['shape'] or \
                                     o['visualization']['colour'] != self._goalBlocks[0]['visualization']['colour']:
                                 self._phase = Phase.PUT_AWAY_WRONG_BLOCK
                                 self._navigator.reset_full()
                                 self._navigator.add_waypoints(
                                     [[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
+                            # Pick up the goal block that is correct and then immediately drop it
                             else:
                                 self._carryingO = o
                                 self._phase = Phase.MOVE_GOAL_BLOCK
@@ -2126,6 +2173,7 @@ class LazyAgent(BW4TBrain):
                             action_kwargs = {}
                             action_kwargs['object_id'] = o['obj_id']
                             return action, action_kwargs
+                # Find a room or block
                 if len(self._possibleGoalBLocks) == 0:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                 else:
@@ -2208,7 +2256,6 @@ class LazyAgent(BW4TBrain):
                                 self._navigator.add_waypoints([next['location']])
                 self._checkGoals.remove(goal)
 
-            # TODO: Has not been tested, since it does not parse messages yet
             if Phase.MOVING_TO_KNOWN_BLOCK == self._phase:
                 self._state_tracker.update(state)
                 action = self._navigator.get_move_action(self._state_tracker)
@@ -2217,6 +2264,7 @@ class LazyAgent(BW4TBrain):
                 objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
                 if objects is not None:
                     for o in objects:
+                        # If the known block is a goal block, pick it up and bring it to the goal
                         if o['location'] == self._possibleGoalBLocks[0]:
                             for g in self._goalBlocks:
                                 if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
@@ -2495,6 +2543,7 @@ class LiarAgent(BW4TBrain):
                 self._teamMembers.append(member)
                 # Process messages from team members
 
+        # Check if there are objects laying around the agent.
         objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
         if objects is not None:
             for o in objects:
@@ -2539,6 +2588,7 @@ class LiarAgent(BW4TBrain):
                 action = self._navigator.get_move_action(self._state_tracker)
                 if action != None:
                     return action, {}
+                # If the door is not open, open the door.
                 if self._door['is_open']:
                     self._phase = Phase.ENTERING_ROOM
                 else:
@@ -2557,9 +2607,11 @@ class LiarAgent(BW4TBrain):
             if Phase.ENTERING_ROOM == self._phase:
                 if self._door in self._notExplored:
                     self._notExplored.remove(self._door)
+                # Send message of action
                 self._sendMassage('Searching through ' + self._door['room_name'], agent_name)
                 self._navigator.reset_full()
                 objects = state.get_room_objects(self._door['room_name'])
+                # Add all traversable tiles as waypoints
                 for o in objects:
                     if o['is_traversable']:
                         self._navigator.add_waypoints([o['location']])
@@ -2569,6 +2621,7 @@ class LiarAgent(BW4TBrain):
                 self._state_tracker.update(state)
                 action = self._navigator.get_move_action(self._state_tracker)
                 objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
+                # If there is a goal block in the room pick it up and take it to the goal
                 if objects is not None:
                     for o in objects:
                         for g in self._goalBlocks:
@@ -2594,6 +2647,8 @@ class LiarAgent(BW4TBrain):
                                 return action, action_kwargs
                 if action != None:
                     return action, {}
+
+                # If you explored the entire room, find a new one or go to a known block
                 if len(self._possibleGoalBLocks) == 0:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                 else:
@@ -2632,6 +2687,7 @@ class LiarAgent(BW4TBrain):
                 self._sendMassage('Removing block' + str(self._carrying) + ' from list: ' + str(self._goalBlocks),
                                   agent_name)
 
+                # If there are more goal blocks to find, update your goalblock list. Else check if it is a solution
                 if len(self._goalBlocks) >= 1:
                     self._sendMassage('Updating goal list with ' + str(len(self._goalBlocks)), agent_name)
                     self._phase = Phase.UPDATE_GOAL_LIST
@@ -2657,6 +2713,7 @@ class LiarAgent(BW4TBrain):
 
             if Phase.CHECK_GOALS == self._phase:
                 self._phase = Phase.FOLLOW_PATH_TO_GOAL
+                # If there was a wrong block on a goal, try and find a goal block
                 if len(self._goalsWrong) != 0:
                     if len(self._possibleGoalBLocks) == 0:
                         self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -2666,6 +2723,7 @@ class LiarAgent(BW4TBrain):
                         self._navigator.add_waypoints([block])
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
+                # If all goal blocks have been checked, try and find a goal block
                 if len(self._goalBlocks) == 0:
                     if len(self._possibleGoalBLocks) == 0:
                         self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -2691,12 +2749,14 @@ class LiarAgent(BW4TBrain):
                 if objects is not None:
                     for o in objects:
                         if o['location'] == self.state.get_self()['location']:
+                            # If the current goal location has the wrong block on it, remove it
                             if o['visualization']['shape'] != self._goalBlocks[0]['visualization']['shape'] or \
                                     o['visualization']['colour'] != self._goalBlocks[0]['visualization']['colour']:
                                 self._phase = Phase.PUT_AWAY_WRONG_BLOCK
                                 self._navigator.reset_full()
                                 self._navigator.add_waypoints(
                                     [[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
+                            # Pick up the goal block that is correct and then immediately drop it
                             else:
                                 self._carryingO = o
                                 self._phase = Phase.MOVE_GOAL_BLOCK
@@ -2710,6 +2770,7 @@ class LiarAgent(BW4TBrain):
                             action_kwargs = {}
                             action_kwargs['object_id'] = o['obj_id']
                             return action, action_kwargs
+                # Find a room or block
                 if len(self._possibleGoalBLocks) == 0:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                 else:
@@ -2792,7 +2853,6 @@ class LiarAgent(BW4TBrain):
                                 self._navigator.add_waypoints([next['location']])
                 self._checkGoals.remove(goal)
 
-            # TODO: Has not been tested, since it does not parse messages yet
             if Phase.MOVING_TO_KNOWN_BLOCK == self._phase:
                 self._state_tracker.update(state)
                 action = self._navigator.get_move_action(self._state_tracker)
@@ -2801,6 +2861,7 @@ class LiarAgent(BW4TBrain):
                 objects = state.get_closest_with_property({'class_inheritance': ['CollectableBlock']})
                 if objects is not None:
                     for o in objects:
+                        # If the known block is a goal block, pick it up and bring it to the goal
                         if o['location'] == self._possibleGoalBLocks[0]:
                             for g in self._goalBlocks:
                                 if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
