@@ -78,7 +78,8 @@ class BaseAgent(BW4TBrain):
                 if member != agent_name and member not in self._teamMembers:
                     self._teamMembers.append(member)
                     self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
-
+        if self._age % 25 == 0:
+            self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
         closest_agents = state.get_closest_agents()
         if closest_agents is not None:
             for item in closest_agents:
@@ -626,6 +627,16 @@ class BaseAgent(BW4TBrain):
                         blocks.append(block)
                     self._teamObservedStatus[member] = {'location': location, 'is_carrying': blocks,
                                                         'age': self._age - 1}
+        if string_list[0] == 'Trustbeliefs:':
+            obj = message.split(' ', 1)[1]
+            obj = obj.replace("'", '"')
+            trust_beliefs = json.loads(obj)
+            if self._trustBeliefs[member]['rating'] > Trust_Level:
+                for item in trust_beliefs:
+                    if item == myself:
+                        continue
+                    self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item]['rating']
+                                                          * self._trustBeliefs[member]['rating']) / (1 + self._trustBeliefs[member]['rating'])
 
 
 class StrongAgent(BW4TBrain):
@@ -664,6 +675,9 @@ class StrongAgent(BW4TBrain):
                 if member != agent_name and member not in self._teamMembers:
                     self._teamMembers.append(member)
                     self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+
+        if self._age % 25 == 0:
+            self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
 
         closest_agents = state.get_closest_agents()
         if closest_agents is not None:
@@ -1252,6 +1266,18 @@ class StrongAgent(BW4TBrain):
                         blocks.append(block)
                     self._teamObservedStatus[member] = {'location': location, 'is_carrying': blocks,
                                                         'age': self._age - 1}
+            if string_list[0] == 'Trustbeliefs:':
+                obj = message.split(' ', 1)[1]
+                obj = obj.replace("'", '"')
+                trust_beliefs = json.loads(obj)
+                if self._trustBeliefs[member]['rating'] > Trust_Level:
+                    for item in trust_beliefs:
+                        if item == myself:
+                            continue
+                        self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item][
+                            'rating']
+                                                              * self._trustBeliefs[member]['rating']) / (
+                                                                         1 + self._trustBeliefs[member]['rating'])
 
 
 class ColorblindAgent(BW4TBrain):
@@ -1288,6 +1314,9 @@ class ColorblindAgent(BW4TBrain):
                 if member != agent_name and member not in self._teamMembers:
                     self._teamMembers.append(member)
                     self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+
+        if self._age % 25 == 0:
+            self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
 
         closest_agents = state.get_closest_agents()
         if closest_agents is not None:
@@ -1816,6 +1845,17 @@ class ColorblindAgent(BW4TBrain):
                     self._teamObservedStatus[member] = {'location': location, 'is_carrying': blocks,
                                                         'age': self._age - 1}
 
+        if string_list[0] == 'Trustbeliefs:':
+            obj = message.split(' ', 1)[1]
+            obj = obj.replace("'", '"')
+            trust_beliefs = json.loads(obj)
+            if self._trustBeliefs[member]['rating'] > Trust_Level:
+                for item in trust_beliefs:
+                    if item == myself:
+                        continue
+                    self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item]['rating']
+                                                          * self._trustBeliefs[member]['rating']) / (1 + self._trustBeliefs[member]['rating'])
+
 
 class LazyAgent(BW4TBrain):
 
@@ -1853,6 +1893,9 @@ class LazyAgent(BW4TBrain):
                 if member != agent_name and member not in self._teamMembers:
                     self._teamMembers.append(member)
                     self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+
+        if self._age % 25 == 0:
+            self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
 
         closest_agents = state.get_closest_agents()
         if closest_agents is not None:
@@ -2451,6 +2494,17 @@ class LazyAgent(BW4TBrain):
                     self._teamObservedStatus[member] = {'location': location, 'is_carrying': blocks,
                                                         'age': self._age - 1}
 
+        if string_list[0] == 'Trustbeliefs:':
+            obj = message.split(' ', 1)[1]
+            obj = obj.replace("'", '"')
+            trust_beliefs = json.loads(obj)
+            if self._trustBeliefs[member]['rating'] > Trust_Level:
+                for item in trust_beliefs:
+                    if item == myself:
+                        continue
+                    self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item]['rating']
+                                                          * self._trustBeliefs[member]['rating']) / (1 + self._trustBeliefs[member]['rating'])
+
 
 class LiarAgent(BW4TBrain):
 
@@ -2486,6 +2540,9 @@ class LiarAgent(BW4TBrain):
                 if member != agent_name and member not in self._teamMembers:
                     self._teamMembers.append(member)
                     self._trustBeliefs[member] = {'rating': 0.5, 'age': self._age}
+
+        if self._age % 25 == 0:
+            self._sendMessage('Trustbeliefs: ' + str(self._trustBeliefs), agent_name)
 
         closest_agents = state.get_closest_agents()
         if closest_agents is not None:
@@ -3047,6 +3104,17 @@ class LiarAgent(BW4TBrain):
                         blocks.append(block)
                     self._teamObservedStatus[member] = {'location': location, 'is_carrying': blocks,
                                                         'age': self._age - 1}
+
+        if string_list[0] == 'Trustbeliefs:':
+            obj = message.split(' ', 1)[1]
+            obj = obj.replace("'", '"')
+            trust_beliefs = json.loads(obj)
+            if self._trustBeliefs[member]['rating'] > Trust_Level:
+                for item in trust_beliefs:
+                    if item == myself:
+                        continue
+                    self._trustBeliefs[item]['rating'] = (self._trustBeliefs[item]['rating'] + trust_beliefs[item]['rating']
+                                                          * self._trustBeliefs[member]['rating']) / (1 + self._trustBeliefs[member]['rating'])
 
     def _generateLie(self):
         rand = random.randint(1, 6)
