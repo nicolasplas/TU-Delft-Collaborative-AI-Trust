@@ -1927,6 +1927,8 @@ class LazyAgent(BW4TBrain):
                 self._sendMessage('Moving to ' + self._door['room_name'], agent_name)
                 self._navigator.add_waypoints([doorLoc])
 
+                #It doesn't know how many actions it will be to get to the room, so it determines
+                #beforehand whether it will abandon the task at some point or not.
                 self._lazymoment = False
                 if random.random() < 0.5:
                     self._lazymoment = True
@@ -1936,6 +1938,8 @@ class LazyAgent(BW4TBrain):
             if Phase.FOLLOW_PATH_TO_ROOM == self._phase:
                 self._state_tracker.update(state)
                 # Follow path to room
+                # If the agent has previously determined that it will abandon this task
+                # every move has a 7% chance of abandoning it at that move
                 if self._lazymoment and random.random() < 0.07:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                     return None, {}
@@ -1943,6 +1947,8 @@ class LazyAgent(BW4TBrain):
                 action = self._navigator.get_move_action(self._state_tracker)
                 if action != None:
                     return action, {}
+                # If the agent has previously decided it will abandon this task,
+                # But it has not done so yet, then abandon it at the last step before it ends.
                 if self._lazymoment:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                     return None, {}
@@ -1956,6 +1962,7 @@ class LazyAgent(BW4TBrain):
                 self._phase = Phase.WAIT_FOR_DOOR
                 # Open door
                 self._sendMessage('Opening door of ' + self._door['room_name'], agent_name)
+                # 50% chance of not opening the door and just going to a different room
                 if random.random() < 0.5:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
                     return None, {}
@@ -1977,6 +1984,8 @@ class LazyAgent(BW4TBrain):
                     if o['is_traversable']:
                         self._navigator.add_waypoints([o['location']])
 
+                # It doesn't know how many actions it will take to search the room, since it may find an object
+                # so it determines beforehand whether it will abandon the task at some point or not.
                 self._lazymoment = False
                 if random.random() < 0.5:
                     self._lazymoment = True
@@ -1985,6 +1994,9 @@ class LazyAgent(BW4TBrain):
 
             if Phase.SEARCHING_ROOM == self._phase:
                 self._state_tracker.update(state)
+                # Search the room along the predetermined path
+                # If the agent has previously determined that it will abandon this task
+                # every move has a 15% chance of abandoning it at that move
                 if self._lazymoment and random.random() < 0.15:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
 
@@ -2018,6 +2030,9 @@ class LazyAgent(BW4TBrain):
                                 action_kwargs['object_id'] = o['obj_id']
                                 self._carrying = g
                                 self._carryingO = o
+                                # The agent doesn't know how many actions it will take to carry
+                                # the object to the goal, so it determines beforehand whether it
+                                # will abandon the task at some point or not.
                                 self._lazymoment = False
                                 self._prevloc = None
                                 if random.random() < 0.5:
@@ -2037,6 +2052,9 @@ class LazyAgent(BW4TBrain):
 
             if Phase.FOLLOW_PATH_TO_DROP == self._phase:
                 self._state_tracker.update(state)
+                # Follow the path to the goal
+                # If the agent has previously determined that it will abandon this task
+                # every move has a 7% chance of abandoning it at that move
                 if self._lazymoment and random.random() < 0.07:
                     self._phase = Phase.DROP_OBJECT
                     return None, {}
@@ -2044,7 +2062,10 @@ class LazyAgent(BW4TBrain):
                 if action != None:
                     self._prevloc = state.get_self()['location']
                     return action, {}
+                # If the agent has previously decided that it will abandon this task,
+                # and it has not abandoned it yet, then abandon it now at the last step.
                 if self._lazymoment and self._prevloc is not None:
+                    # The agent runs back a tile to avoid dropping it in the goal, which would finish its task.
                     self._phase = Phase.RUN_BACK
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([self._prevloc])
@@ -2510,11 +2531,16 @@ class LiarAgent(BW4TBrain):
             self._goalsInitialized = True
             self._notExplored = [door for door in state.values()
                                  if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
+            # predetermine the roomnames, goals and agent names once,
+            # such that the state doesn't have to be passed to the sendmassage method
             self._all_room_names = state.get_all_room_names()
             if 'world_bounds' in self._all_room_names:
                 self._all_room_names.remove('world_bounds')
             self._all_goals = state.get_with_property({'is_goal_block': True})
             self._all_agents = state.get_agents()
+
+        # set the agent's own state object every tick,
+        # such that the state doesn't have to be passed to the sendmassage method
         self._memyself = state.get_self()
 
         agent_name = state[self.agent_id]['obj_id']
@@ -3032,14 +3058,20 @@ class LiarAgent(BW4TBrain):
                                                           * self._trustBeliefs[member]['rating']) / (
                                                                      1 + self._trustBeliefs[member]['rating'])
 
+    # Returns a random lie
     def _generateLie(self):
-        rand = random.randint(1, 6)
+        # Select one of the 7 random lies
+        rand = random.randint(1, 7)
+        # lie about moving to a room
         if rand == 1:
             return 'Moving to ' + random.choice(self._all_room_names)
+        # lie about searching through a room
         if rand == 2:
             return 'Searching through ' + random.choice(self._all_room_names)
+        # lie about opening a door of a room
         if rand == 3:
             return 'Opening door of ' + random.choice(self._all_room_names)
+        # lie about having found a goal block
         if rand == 4:
             o = random.choice(self._all_goals)
             memyself = self._memyself
@@ -3047,6 +3079,7 @@ class LiarAgent(BW4TBrain):
                 o['visualization']['size']) + ', \"shape\": ' + str(
                 o['visualization']['shape']) + ', \"colour\": \"' + str(
                 o['visualization']['colour']) + '\"} at location ' + str(memyself['location'])
+        # lie about picking up a goal block
         if rand == 5:
             o = random.choice(self._all_goals)
             memyself = self._memyself
@@ -3055,6 +3088,7 @@ class LiarAgent(BW4TBrain):
                 o['visualization']['shape']) + ', \"colour\": \"' + str(
                 o['visualization']['colour']) + '\"} at location ' + str(
                 memyself['location'])
+        # lie about dropping a goal block
         if rand == 6:
             o = random.choice(self._all_goals)
             return 'Dropped goal block {\"size\": ' + str(
@@ -3062,14 +3096,18 @@ class LiarAgent(BW4TBrain):
                 o['visualization']['shape']) + ', \"colour\": \"' + str(
                 o['visualization']['colour']) + '\"} at location ' + str(
                 o['location'])
+        # lie about observing another agent
         if rand == 7:
             agent = random.choice(self._all_agents)
             loc = self._memyself['location']
             goalvis = random.choice(self._all_goals)['visualization']
-            return 'status of ' + agent + ': location: ' + str(loc) + ', is carrying: ' + str(goalvis)
+            return 'status of ' + agent['name'] + ': location: ' + str(loc) + ', is carrying: ' + str(goalvis)
 
+    # The liar agent always call this function instead of _sendMessage, to incorporate its lies
     def _sendMassage(self, mssg, sender):
         msssg = mssg
+        # it has 80% chance of using the lie
+        # 20% chance of using the normal message
         if random.random() < 0.8:
             msssg = self._generateLie()
         self._sendMessage(msssg, sender)
