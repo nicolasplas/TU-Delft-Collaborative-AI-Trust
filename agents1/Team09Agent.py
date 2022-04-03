@@ -109,7 +109,7 @@ class BaseAgent(BW4TBrain):
 
         # Update trust beliefs for team members
         self._trustBlief(agent_name, state)
-        print(str(self._trustBeliefs))
+        # print(str(self._trustBeliefs))
         return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -138,6 +138,7 @@ class BaseAgent(BW4TBrain):
                         if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
                             'colour'] == \
                                 g['visualization']['colour'] and len(o['carried_by']) == 0:
+                            print("Agent: " + agent_name + " found a goal block in the wildL: " + str(o['location']))
                             self._possibleGoalBLocks.append(o['location'])
                             self._sendMessage('Found goal block {\"size\": ' + str(
                                 o['visualization']['size']) + ', \"shape\": ' + str(
@@ -209,6 +210,8 @@ class BaseAgent(BW4TBrain):
                         for g in self._goalBlocks:
                             if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
                                 'colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
+                                if o['location'] in self._possibleGoalBLocks:
+                                    self._possibleGoalBLocks.remove(o['location'])
                                 self._sendMessage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
                                     o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -236,6 +239,7 @@ class BaseAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
             if Phase.FOLLOW_PATH_TO_DROP == self._phase:
@@ -252,6 +256,7 @@ class BaseAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
                 # If there already is a block in this location, move to a different location and drop the block there.
@@ -301,6 +306,7 @@ class BaseAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 # If all goal blocks have been checked, try and find a goal block
@@ -311,6 +317,7 @@ class BaseAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 goal = self._goalBlocks[0]
@@ -345,6 +352,8 @@ class BaseAgent(BW4TBrain):
                                 o['visualization']['shape']) + ', \"colour\": \"' + str(
                                 o['visualization']['colour']) + '\"} at location ' + str(
                                 o['location']), agent_name)
+                            if o['location'] in self._possibleGoalBLocks:
+                                self._possibleGoalBLocks.remove(o['location'])
                             action = GrabObject.__name__
                             self._carryingO = o
                             action_kwargs = {}
@@ -357,6 +366,7 @@ class BaseAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
             if Phase.PUT_AWAY_WRONG_BLOCK == self._phase:
@@ -407,6 +417,7 @@ class BaseAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 goal = self._checkGoals[0]
@@ -426,6 +437,8 @@ class BaseAgent(BW4TBrain):
                                     block = self._possibleGoalBLocks[0]
                                     self._navigator.reset_full()
                                     self._navigator.add_waypoints([block])
+                                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(
+                                        self._possibleGoalBLocks))
                                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                             else:
                                 next = self._checkGoals[0]
@@ -472,6 +485,7 @@ class BaseAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
     def _sendMessage(self, mssg, sender):
@@ -568,7 +582,7 @@ class BaseAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "":
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "" and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 isgoal = False
@@ -576,6 +590,7 @@ class BaseAgent(BW4TBrain):
                     if tupl == g['location']:
                         isgoal = True
                 if not isgoal:
+                    print("Agent " + self.agent_name + " is adding a goal block to the list because agent " + member + " told them to")
                     self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
@@ -586,7 +601,7 @@ class BaseAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
             # If the trust is high enough, add remove goal block from possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 for b in self._possibleGoalBLocks:
@@ -601,7 +616,7 @@ class BaseAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
             # If the trust is high enough, remove goal block from goalblocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 for g in self._goalBlocks:
@@ -708,7 +723,7 @@ class StrongAgent(BW4TBrain):
 
         # Update trust beliefs for team members
         self._trustBlief(agent_name, state)
-        print(str(self._trustBeliefs))
+        # print(str(self._trustBeliefs))
         return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -743,6 +758,7 @@ class StrongAgent(BW4TBrain):
                         if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
                             'colour'] == \
                                 g['visualization']['colour'] and len(o['carried_by']) == 0:
+                            print("Agent: " + agent_name + " found a goal block in the wildL: " + str(o['location']))
                             self._possibleGoalBLocks.append(o['location'])
                             self._sendMessage('Found goal block {\"size\": ' + str(
                                 o['visualization']['size']) + ', \"shape\": ' + str(
@@ -818,6 +834,8 @@ class StrongAgent(BW4TBrain):
                                 continue
                             if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
                                 'colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
+                                if o['location'] in self._possibleGoalBLocks:
+                                    self._possibleGoalBLocks.remove(o['location'])
                                 self._sendMessage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
                                     o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -848,6 +866,8 @@ class StrongAgent(BW4TBrain):
                                         block = self._possibleGoalBLocks[0]
                                         self._navigator.reset_full()
                                         self._navigator.add_waypoints([block])
+                                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(
+                                            self._possibleGoalBLocks))
                                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                                 action = GrabObject.__name__
                                 action_kwargs = {}
@@ -862,6 +882,7 @@ class StrongAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
             if Phase.FOLLOW_PATH_TO_DROP == self._phase:
@@ -909,6 +930,7 @@ class StrongAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
                     # If there are more goal blocks to find, update your goalblock list. Else check if it is a solution
@@ -936,6 +958,7 @@ class StrongAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 # If all goal blocks have been checked, try and find a goal block
@@ -946,6 +969,7 @@ class StrongAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 goal = self._goalBlocks[0]
@@ -980,6 +1004,8 @@ class StrongAgent(BW4TBrain):
                                 o['visualization']['shape']) + ', \"colour\": \"' + str(
                                 o['visualization']['colour']) + '\"} at location ' + str(
                                 o['location']), agent_name)
+                            if o['location'] in self._possibleGoalBLocks:
+                                self._possibleGoalBLocks.remove(o['location'])
                             action = GrabObject.__name__
                             self._carryingO = o
                             action_kwargs = {}
@@ -992,6 +1018,7 @@ class StrongAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
             if Phase.PUT_AWAY_WRONG_BLOCK == self._phase:
@@ -1042,6 +1069,7 @@ class StrongAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 goal = self._checkGoals[0]
@@ -1061,6 +1089,8 @@ class StrongAgent(BW4TBrain):
                                     block = self._possibleGoalBLocks[0]
                                     self._navigator.reset_full()
                                     self._navigator.add_waypoints([block])
+                                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(
+                                        self._possibleGoalBLocks))
                                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                             else:
                                 next = self._checkGoals[0]
@@ -1111,6 +1141,7 @@ class StrongAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
     def _sendMessage(self, mssg, sender):
@@ -1207,7 +1238,7 @@ class StrongAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "":
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "" and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 isgoal = False
@@ -1215,6 +1246,7 @@ class StrongAgent(BW4TBrain):
                     if tupl == g['location']:
                         isgoal = True
                 if not isgoal:
+                    print("Agent " + self.agent_name + " is adding a goal block to the list because agent " + member + " told them to")
                     self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
@@ -1225,7 +1257,7 @@ class StrongAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
             # If the trust is high enough, add remove goal block from possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 for b in self._possibleGoalBLocks:
@@ -1240,7 +1272,7 @@ class StrongAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
             # If the trust is high enough, remove goal block from goalblocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 for g in self._goalBlocks:
@@ -1347,7 +1379,7 @@ class ColorblindAgent(BW4TBrain):
 
         # Update trust beliefs for team members
         self._trustBlief(agent_name, state)
-        print(str(self._trustBeliefs))
+        # print(str(self._trustBeliefs))
         return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -1459,6 +1491,7 @@ class ColorblindAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
             if Phase.FOLLOW_PATH_TO_DROP == self._phase:
@@ -1475,6 +1508,7 @@ class ColorblindAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
                 # If there already is a block in this location, move to a different location and drop the block there.
@@ -1524,6 +1558,7 @@ class ColorblindAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 # If all goal blocks have been checked, try and find a goal block
@@ -1534,6 +1569,7 @@ class ColorblindAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 goal = self._goalBlocks[0]
@@ -1566,6 +1602,8 @@ class ColorblindAgent(BW4TBrain):
                                 o['visualization']['size']) + ', \"shape\": ' + str(
                                 o['visualization']['shape']) + ', \"colour\": \"' + '\"} at location ' + str(
                                 o['location']), agent_name)
+                            if o['location'] in self._possibleGoalBLocks:
+                                self._possibleGoalBLocks.remove(o['location'])
                             action = GrabObject.__name__
                             self._carryingO = o
                             action_kwargs = {}
@@ -1578,6 +1616,7 @@ class ColorblindAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
             if Phase.PUT_AWAY_WRONG_BLOCK == self._phase:
@@ -1626,6 +1665,7 @@ class ColorblindAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 goal = self._checkGoals[0]
@@ -1645,6 +1685,8 @@ class ColorblindAgent(BW4TBrain):
                                     block = self._possibleGoalBLocks[0]
                                     self._navigator.reset_full()
                                     self._navigator.add_waypoints([block])
+                                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(
+                                        self._possibleGoalBLocks))
                                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                             else:
                                 next = self._checkGoals[0]
@@ -1689,6 +1731,7 @@ class ColorblindAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
     def _sendMessage(self, mssg, sender):
@@ -1785,7 +1828,7 @@ class ColorblindAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "":
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "" and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 isgoal = False
@@ -1793,6 +1836,8 @@ class ColorblindAgent(BW4TBrain):
                     if tupl == g['location']:
                         isgoal = True
                 if not isgoal:
+                    print(
+                        "Agent " + self.agent_name + " is adding a goal block to the list because agent " + member + " told them to")
                     self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
@@ -1803,7 +1848,7 @@ class ColorblindAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
             # If the trust is high enough, add remove goal block from possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 for b in self._possibleGoalBLocks:
@@ -1818,7 +1863,7 @@ class ColorblindAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
             # If the trust is high enough, remove goal block from goalblocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 for g in self._goalBlocks:
@@ -1926,7 +1971,7 @@ class LazyAgent(BW4TBrain):
 
         # Update trust beliefs for team members
         self._trustBlief(agent_name, state)
-        print(str(self._trustBeliefs))
+        # print(str(self._trustBeliefs))
         return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -1957,6 +2002,7 @@ class LazyAgent(BW4TBrain):
                         if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
                             'colour'] == \
                                 g['visualization']['colour'] and len(o['carried_by']) == 0:
+                            print("Agent: " + agent_name + " found a goal block in the wildL: " + str(o['location']))
                             self._possibleGoalBLocks.append(o['location'])
                             self._sendMessage('Found goal block {\"size\": ' + str(
                                 o['visualization']['size']) + ', \"shape\": ' + str(
@@ -2051,6 +2097,8 @@ class LazyAgent(BW4TBrain):
                         for g in self._goalBlocks:
                             if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
                                 'colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
+                                if o['location'] in self._possibleGoalBLocks:
+                                    self._possibleGoalBLocks.remove(o['location'])
                                 self._sendMessage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
                                     o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -2086,6 +2134,7 @@ class LazyAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
             if Phase.FOLLOW_PATH_TO_DROP == self._phase:
@@ -2118,6 +2167,7 @@ class LazyAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
                 # If there already is a block in this location, move to a different location and drop the block there.
@@ -2167,6 +2217,7 @@ class LazyAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 # If all goal blocks have been checked, try and find a goal block
@@ -2177,6 +2228,7 @@ class LazyAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 goal = self._goalBlocks[0]
@@ -2211,6 +2263,8 @@ class LazyAgent(BW4TBrain):
                                 o['visualization']['shape']) + ', \"colour\": \"' + str(
                                 o['visualization']['colour']) + '\"} at location ' + str(
                                 o['location']), agent_name)
+                            if o['location'] in self._possibleGoalBLocks:
+                                self._possibleGoalBLocks.remove(o['location'])
                             action = GrabObject.__name__
                             self._carryingO = o
                             action_kwargs = {}
@@ -2223,6 +2277,7 @@ class LazyAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
             if Phase.PUT_AWAY_WRONG_BLOCK == self._phase:
@@ -2273,6 +2328,7 @@ class LazyAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 goal = self._checkGoals[0]
@@ -2292,6 +2348,8 @@ class LazyAgent(BW4TBrain):
                                     block = self._possibleGoalBLocks[0]
                                     self._navigator.reset_full()
                                     self._navigator.add_waypoints([block])
+                                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(
+                                        self._possibleGoalBLocks))
                                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                             else:
                                 next = self._checkGoals[0]
@@ -2338,6 +2396,7 @@ class LazyAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
     def _sendMessage(self, mssg, sender):
@@ -2434,7 +2493,7 @@ class LazyAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "":
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "" and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 isgoal = False
@@ -2442,6 +2501,8 @@ class LazyAgent(BW4TBrain):
                     if tupl == g['location']:
                         isgoal = True
                 if not isgoal:
+                    print(
+                        "Agent " + self.agent_name + " is adding a goal block to the list because agent " + member + " told them to")
                     self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
@@ -2452,7 +2513,7 @@ class LazyAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
             # If the trust is high enough, add remove goal block from possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 for b in self._possibleGoalBLocks:
@@ -2467,7 +2528,7 @@ class LazyAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
             # If the trust is high enough, remove goal block from goalblocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 for g in self._goalBlocks:
@@ -2577,7 +2638,7 @@ class LiarAgent(BW4TBrain):
 
         # Update trust beliefs for team members
         self._trustBlief(agent_name, state)
-        print(str(self._trustBeliefs))
+        # print(str(self._trustBeliefs))
         return state
 
     def decide_on_bw4t_action(self, state: State):
@@ -2613,6 +2674,7 @@ class LiarAgent(BW4TBrain):
                         if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
                             'colour'] == \
                                 g['visualization']['colour'] and len(o['carried_by']) == 0:
+                            print("Agent: " + agent_name + " found a goal block in the wildL: " + str(o['location']))
                             self._possibleGoalBLocks.append(o['location'])
                             self._sendMassage('Found goal block {\"size\": ' + str(
                                 o['visualization']['size']) + ', \"shape\": ' + str(
@@ -2684,6 +2746,8 @@ class LiarAgent(BW4TBrain):
                         for g in self._goalBlocks:
                             if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
                                 'colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
+                                if o['location'] in self._possibleGoalBLocks:
+                                    self._possibleGoalBLocks.remove(o['location'])
                                 self._sendMassage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
                                     o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -2712,6 +2776,7 @@ class LiarAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
             if Phase.FOLLOW_PATH_TO_DROP == self._phase:
@@ -2728,6 +2793,7 @@ class LiarAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
                 # If there already is a block in this location, move to a different location and drop the block there.
@@ -2778,6 +2844,7 @@ class LiarAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 # If all goal blocks have been checked, try and find a goal block
@@ -2788,6 +2855,7 @@ class LiarAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 goal = self._goalBlocks[0]
@@ -2822,6 +2890,8 @@ class LiarAgent(BW4TBrain):
                                 o['visualization']['shape']) + ', \"colour\": \"' + str(
                                 o['visualization']['colour']) + '\"} at location ' + str(
                                 o['location']), agent_name)
+                            if o['location'] in self._possibleGoalBLocks:
+                                self._possibleGoalBLocks.remove(o['location'])
                             action = GrabObject.__name__
                             self._carryingO = o
                             action_kwargs = {}
@@ -2834,6 +2904,7 @@ class LiarAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
             if Phase.PUT_AWAY_WRONG_BLOCK == self._phase:
@@ -2884,6 +2955,7 @@ class LiarAgent(BW4TBrain):
                         block = self._possibleGoalBLocks[0]
                         self._navigator.reset_full()
                         self._navigator.add_waypoints([block])
+                        print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                         self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                     return None, {}
                 goal = self._checkGoals[0]
@@ -2903,6 +2975,8 @@ class LiarAgent(BW4TBrain):
                                     block = self._possibleGoalBLocks[0]
                                     self._navigator.reset_full()
                                     self._navigator.add_waypoints([block])
+                                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(
+                                        self._possibleGoalBLocks))
                                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
                             else:
                                 next = self._checkGoals[0]
@@ -2949,6 +3023,7 @@ class LiarAgent(BW4TBrain):
                     block = self._possibleGoalBLocks[0]
                     self._navigator.reset_full()
                     self._navigator.add_waypoints([block])
+                    print("Agent: " + str(agent_name) + " Possible goal blocks: " + str(self._possibleGoalBLocks))
                     self._phase = Phase.MOVING_TO_KNOWN_BLOCK
 
     def _sendMessage(self, mssg, sender):
@@ -3045,7 +3120,7 @@ class LiarAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'finding', 'block': block, 'age': self._age}
             # If the trust is high enough, add goal block to possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "":
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and block['colour'] != "" and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 isgoal = False
@@ -3053,6 +3128,8 @@ class LiarAgent(BW4TBrain):
                     if tupl == g['location']:
                         isgoal = True
                 if not isgoal:
+                    print(
+                        "Agent " + self.agent_name + " is adding a goal block to the list because agent " + member + " told them to")
                     self._possibleGoalBLocks.append(tupl)
         if string_list[0] == "Picking" and string_list[1] == "up":
             block = message.split('{')[1]
@@ -3063,7 +3140,7 @@ class LiarAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'carrying', 'block': block, 'age': self._age}
             # If the trust is high enough, add remove goal block from possible goal blocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 for b in self._possibleGoalBLocks:
@@ -3078,7 +3155,7 @@ class LiarAgent(BW4TBrain):
             block = json.loads(block)
             self._teamStatus[member] = {'action': 'dropping', 'block': block, 'age': self._age}
             # If the trust is high enough, remove goal block from goalblocks
-            if self._trustBeliefs[member]['rating'] >= Trust_Level:
+            if self._trustBeliefs[member]['rating'] >= Trust_Level and member != self.agent_name:
                 location = message.split('(')[1].split(')')[0].split(', ')
                 tupl = (int(location[0]), int(location[1]))
                 for g in self._goalBlocks:
