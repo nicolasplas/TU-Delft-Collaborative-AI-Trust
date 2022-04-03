@@ -43,6 +43,7 @@ class Phase(enum.Enum):
     MOVING_TO_KNOWN_BLOCK = 16,
     RUN_BACK = 17
 
+
 class BaseAgent(BW4TBrain):
 
     def __init__(self, settings: Dict[str, object]):
@@ -115,7 +116,7 @@ class BaseAgent(BW4TBrain):
             self._goalBlocks = state.get_with_property({'is_goal_block': True})
             self._goalsInitialized = True
             self._notExplored = [door for door in state.values()
-                               if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
+                                 if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
 
         agent_name = state[self.agent_id]['obj_id']
         # Add team members
@@ -146,7 +147,7 @@ class BaseAgent(BW4TBrain):
             if Phase.PLAN_PATH_TO_ROOM == self._phase:
                 self._navigator.reset_full()
                 rooms = [door for door in state.values()
-                               if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
+                         if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
                 if len(rooms) == 0:
                     return None, {}
                 # If not every room has been explored, pick one randomly from the non explored, else pick randomly pick a door
@@ -171,7 +172,7 @@ class BaseAgent(BW4TBrain):
                 if self._door['is_open']:
                     self._phase = Phase.ENTERING_ROOM
                 else:
-                     self._phase = Phase.OPEN_DOOR
+                    self._phase = Phase.OPEN_DOOR
 
             if Phase.OPEN_DOOR == self._phase:
                 self._phase = Phase.WAIT_FOR_DOOR
@@ -201,7 +202,8 @@ class BaseAgent(BW4TBrain):
                 if objects is not None:
                     for o in objects:
                         for g in self._goalBlocks:
-                            if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
+                            if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
+                                'colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
                                 self._sendMessage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
                                     o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -220,7 +222,7 @@ class BaseAgent(BW4TBrain):
                                 self._carrying = g
                                 self._carryingO = o
                                 return action, action_kwargs
-                if action!=None:
+                if action != None:
                     return action, {}
                 if len(self._possibleGoalBLocks) == 0:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -273,9 +275,10 @@ class BaseAgent(BW4TBrain):
                     self._phase = Phase.CHECK_GOALS
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
-                                        self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
-                                        self._carryingO['visualization']['colour']) + '\"} at location ' + str(self.state.get_self()['location']),
+                    self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
+                    self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
+                    self._carryingO['visualization']['colour']) + '\"} at location ' + str(
+                    self.state.get_self()['location']),
                                   agent_name)
 
                 self._carrying = None
@@ -318,10 +321,12 @@ class BaseAgent(BW4TBrain):
                 if objects is not None:
                     for o in objects:
                         if o['location'] == self.state.get_self()['location']:
-                            if o['visualization']['shape'] != self._goalBlocks[0]['visualization']['shape'] or o['visualization']['colour'] != self._goalBlocks[0]['visualization']['colour']:
+                            if o['visualization']['shape'] != self._goalBlocks[0]['visualization']['shape'] or \
+                                    o['visualization']['colour'] != self._goalBlocks[0]['visualization']['colour']:
                                 self._phase = Phase.PUT_AWAY_WRONG_BLOCK
                                 self._navigator.reset_full()
-                                self._navigator.add_waypoints([[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
+                                self._navigator.add_waypoints(
+                                    [[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
                             else:
                                 self._carryingO = o
                                 self._phase = Phase.MOVE_GOAL_BLOCK
@@ -359,9 +364,9 @@ class BaseAgent(BW4TBrain):
                 self._goalBlocks.remove(self._goalBlocks[0])
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
-                                        self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
-                                        self._carryingO['visualization']['colour']) + '\"} at location ' + str(
+                    self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
+                    self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
+                    self._carryingO['visualization']['colour']) + '\"} at location ' + str(
                     self.state.get_self()['location']),
                                   agent_name)
                 self._carryingO = None
@@ -428,7 +433,8 @@ class BaseAgent(BW4TBrain):
                     for o in objects:
                         if o['location'] == self._possibleGoalBLocks[0]:
                             for g in self._goalBlocks:
-                                if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour']:
+                                if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
+                                    'colour'] == g['visualization']['colour']:
                                     self._sendMessage('Found goal block {\"size\": ' + str(
                                         o['visualization']['size']) + ', \"shape\": ' + str(
                                         o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -506,10 +512,10 @@ class BaseAgent(BW4TBrain):
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust increased')
                     else:
-                        if self._age - self._teamObservedStatus[member]['age'] > 10:
+                        if self._age - self._teamObservedStatus[member]['age'] > 8:
                             rating -= \
                                 3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                                                 math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                             # print('trust decreased')
             elif self._teamStatus[member]['action'] == 'carrying':
                 if self._teamObservedStatus[member] is not None and len(
@@ -525,8 +531,8 @@ class BaseAgent(BW4TBrain):
 
                     else:
                         rating -= \
-                           3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                            3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
+                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust decreased')
             if rating < 0:
                 rating = 0
@@ -687,7 +693,7 @@ class StrongAgent(BW4TBrain):
             self._goalBlocks = state.get_with_property({'is_goal_block': True})
             self._goalsInitialized = True
             self._notExplored = [door for door in state.values()
-                               if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
+                                 if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
 
         agent_name = state[self.agent_id]['obj_id']
         # Add team members
@@ -719,7 +725,7 @@ class StrongAgent(BW4TBrain):
             if Phase.PLAN_PATH_TO_ROOM == self._phase:
                 self._navigator.reset_full()
                 rooms = [door for door in state.values()
-                               if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
+                         if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
                 if len(rooms) == 0:
                     return None, {}
                 # If not every room has been explored, pick one randomly from the non explored, else pick randomly pick a door
@@ -744,7 +750,7 @@ class StrongAgent(BW4TBrain):
                 if self._door['is_open']:
                     self._phase = Phase.ENTERING_ROOM
                 else:
-                     self._phase = Phase.OPEN_DOOR
+                    self._phase = Phase.OPEN_DOOR
 
             if Phase.OPEN_DOOR == self._phase:
                 self._phase = Phase.WAIT_FOR_DOOR
@@ -778,7 +784,8 @@ class StrongAgent(BW4TBrain):
                                 continue
                             if self._carrying is not None and g == self._carrying:
                                 continue
-                            if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
+                            if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
+                                'colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
                                 self._sendMessage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
                                     o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -815,7 +822,7 @@ class StrongAgent(BW4TBrain):
                                 action_kwargs = {}
                                 action_kwargs['object_id'] = o['obj_id']
                                 return action, action_kwargs
-                if action!=None:
+                if action != None:
                     return action, {}
                 if len(self._possibleGoalBLocks) == 0:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -846,9 +853,10 @@ class StrongAgent(BW4TBrain):
                             return None, {}
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
-                                        self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
-                                        self._carryingO['visualization']['colour']) + '\"} at location ' + str(self.state.get_self()['location']),
+                    self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
+                    self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
+                    self._carryingO['visualization']['colour']) + '\"} at location ' + str(
+                    self.state.get_self()['location']),
                                   agent_name)
 
                 if self._carryingCount == 2:
@@ -922,10 +930,12 @@ class StrongAgent(BW4TBrain):
                 if objects is not None:
                     for o in objects:
                         if o['location'] == self.state.get_self()['location']:
-                            if o['visualization']['shape'] != self._goalBlocks[0]['visualization']['shape'] or o['visualization']['colour'] != self._goalBlocks[0]['visualization']['colour']:
+                            if o['visualization']['shape'] != self._goalBlocks[0]['visualization']['shape'] or \
+                                    o['visualization']['colour'] != self._goalBlocks[0]['visualization']['colour']:
                                 self._phase = Phase.PUT_AWAY_WRONG_BLOCK
                                 self._navigator.reset_full()
-                                self._navigator.add_waypoints([[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
+                                self._navigator.add_waypoints(
+                                    [[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
                             else:
                                 self._carryingO = o
                                 self._phase = Phase.MOVE_GOAL_BLOCK
@@ -963,9 +973,9 @@ class StrongAgent(BW4TBrain):
                 self._goalBlocks.remove(self._goalBlocks[0])
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
-                                        self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
-                                        self._carryingO['visualization']['colour']) + '\"} at location ' + str(
+                    self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
+                    self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
+                    self._carryingO['visualization']['colour']) + '\"} at location ' + str(
                     self.state.get_self()['location']),
                                   agent_name)
                 self._carryingO = None
@@ -1032,7 +1042,8 @@ class StrongAgent(BW4TBrain):
                     for o in objects:
                         if o['location'] == self._possibleGoalBLocks[0]:
                             for g in self._goalBlocks:
-                                if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour']:
+                                if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
+                                    'colour'] == g['visualization']['colour']:
                                     self._sendMessage('Found goal block {\"size\": ' + str(
                                         o['visualization']['size']) + ', \"shape\": ' + str(
                                         o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -1110,10 +1121,10 @@ class StrongAgent(BW4TBrain):
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust increased')
                     else:
-                        if self._age - self._teamObservedStatus[member]['age'] > 10:
+                        if self._age - self._teamObservedStatus[member]['age'] > 8:
                             rating -= \
                                 3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                                                 math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                             # print('trust decreased')
             elif self._teamStatus[member]['action'] == 'carrying':
                 if self._teamObservedStatus[member] is not None and len(
@@ -1130,7 +1141,7 @@ class StrongAgent(BW4TBrain):
                     else:
                         rating -= \
                             3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust decreased')
             if rating < 0:
                 rating = 0
@@ -1288,7 +1299,7 @@ class ColorblindAgent(BW4TBrain):
             self._goalBlocks = state.get_with_property({'is_goal_block': True})
             self._goalsInitialized = True
             self._notExplored = [door for door in state.values()
-                               if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
+                                 if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
 
         agent_name = state[self.agent_id]['obj_id']
         # Add team members
@@ -1317,7 +1328,7 @@ class ColorblindAgent(BW4TBrain):
             if Phase.PLAN_PATH_TO_ROOM == self._phase:
                 self._navigator.reset_full()
                 rooms = [door for door in state.values()
-                               if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
+                         if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
                 if len(rooms) == 0:
                     return None, {}
                 # If not every room has been explored, pick one randomly from the non explored, else pick randomly pick a door
@@ -1342,7 +1353,7 @@ class ColorblindAgent(BW4TBrain):
                 if self._door['is_open']:
                     self._phase = Phase.ENTERING_ROOM
                 else:
-                     self._phase = Phase.OPEN_DOOR
+                    self._phase = Phase.OPEN_DOOR
 
             if Phase.OPEN_DOOR == self._phase:
                 self._phase = Phase.WAIT_FOR_DOOR
@@ -1375,8 +1386,9 @@ class ColorblindAgent(BW4TBrain):
                             if o['visualization']['shape'] == g['visualization']['shape'] and len(o['carried_by']) == 0:
                                 self._sendMessage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
-                                    o['visualization']['shape']) + ', \"colour\": \"' + '\"} at location ' + str(o['location']), agent_name)
-                if action!=None:
+                                    o['visualization']['shape']) + ', \"colour\": \"' + '\"} at location ' + str(
+                                    o['location']), agent_name)
+                if action != None:
                     return action, {}
                 if len(self._possibleGoalBLocks) == 0:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -1429,8 +1441,9 @@ class ColorblindAgent(BW4TBrain):
                     self._phase = Phase.CHECK_GOALS
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
-                                        self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' +  '\"} at location ' + str(self.state.get_self()['location']),
+                    self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
+                    self._carryingO['visualization']['shape']) + ', \"colour\": \"' + '\"} at location ' + str(
+                    self.state.get_self()['location']),
                                   agent_name)
 
                 self._carrying = None
@@ -1476,7 +1489,8 @@ class ColorblindAgent(BW4TBrain):
                             if o['visualization']['shape'] != self._goalBlocks[0]['visualization']['shape']:
                                 self._phase = Phase.PUT_AWAY_WRONG_BLOCK
                                 self._navigator.reset_full()
-                                self._navigator.add_waypoints([[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
+                                self._navigator.add_waypoints(
+                                    [[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
                             else:
                                 self._carryingO = o
                                 self._phase = Phase.MOVE_GOAL_BLOCK
@@ -1513,8 +1527,8 @@ class ColorblindAgent(BW4TBrain):
                 self._goalBlocks.remove(self._goalBlocks[0])
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
-                                        self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + '\"} at location ' + str(
+                    self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
+                    self._carryingO['visualization']['shape']) + ', \"colour\": \"' + '\"} at location ' + str(
                     self.state.get_self()['location']),
                                   agent_name)
                 self._carryingO = None
@@ -1580,10 +1594,11 @@ class ColorblindAgent(BW4TBrain):
                     for o in objects:
                         if o['location'] == self._possibleGoalBLocks[0]:
                             for g in self._goalBlocks:
-                                if o['visualization']['shape'] == g['visualization']['shape'] :
+                                if o['visualization']['shape'] == g['visualization']['shape']:
                                     self._sendMessage('Found goal block {\"size\": ' + str(
                                         o['visualization']['size']) + ', \"shape\": ' + str(
-                                        o['visualization']['shape']) + ', \"colour\": \"' +  '\"} at location ' + str(o['location']),
+                                        o['visualization']['shape']) + ', \"colour\": \"' + '\"} at location ' + str(
+                                        o['location']),
                                                       agent_name)
                                     self._sendMessage('Picking up goal block {\"size\": ' + str(
                                         o['visualization']['size']) + ', \"shape\": ' + str(
@@ -1656,10 +1671,10 @@ class ColorblindAgent(BW4TBrain):
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust increased')
                     else:
-                        if self._age - self._teamObservedStatus[member]['age'] > 10:
+                        if self._age - self._teamObservedStatus[member]['age'] > 8:
                             rating -= \
                                 3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                                                 math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                             # print('trust decreased')
             elif self._teamStatus[member]['action'] == 'carrying':
                 if self._teamObservedStatus[member] is not None and len(
@@ -1676,7 +1691,7 @@ class ColorblindAgent(BW4TBrain):
                     else:
                         rating -= \
                             3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust decreased')
             if rating < 0:
                 rating = 0
@@ -1836,7 +1851,7 @@ class LazyAgent(BW4TBrain):
             self._goalBlocks = state.get_with_property({'is_goal_block': True})
             self._goalsInitialized = True
             self._notExplored = [door for door in state.values()
-                               if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
+                                 if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
 
         agent_name = state[self.agent_id]['obj_id']
         # Add team members
@@ -1863,7 +1878,6 @@ class LazyAgent(BW4TBrain):
                                 o['visualization']['size']) + ', \"shape\": ' + str(
                                 o['visualization']['shape']) + ', \"colour\": \"' + str(
                                 o['visualization']['colour']) + '\"} at location ' + str(o['location']), agent_name)
-
 
         while True:
             if Phase.PLAN_PATH_TO_ROOM == self._phase:
@@ -1947,7 +1961,8 @@ class LazyAgent(BW4TBrain):
                 if objects is not None:
                     for o in objects:
                         for g in self._goalBlocks:
-                            if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
+                            if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
+                                'colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
                                 self._sendMessage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
                                     o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -2042,9 +2057,10 @@ class LazyAgent(BW4TBrain):
                     self._goalBlocks = state.get_with_property({'is_goal_block': True})
                     self._phase = Phase.CHECK_GOALS
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
-                                        self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
-                                        self._carryingO['visualization']['colour']) + '\"} at location ' + str(self.state.get_self()['location']),
+                    self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
+                    self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
+                    self._carryingO['visualization']['colour']) + '\"} at location ' + str(
+                    self.state.get_self()['location']),
                                   agent_name)
 
                 self._carrying = None
@@ -2130,9 +2146,9 @@ class LazyAgent(BW4TBrain):
                 self._goalBlocks.remove(self._goalBlocks[0])
 
                 self._sendMessage('Dropped goal block {\"size\": ' + str(
-                                        self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
-                                        self._carryingO['visualization']['colour']) + '\"} at location ' + str(
+                    self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
+                    self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
+                    self._carryingO['visualization']['colour']) + '\"} at location ' + str(
                     self.state.get_self()['location']),
                                   agent_name)
                 self._carryingO = None
@@ -2199,7 +2215,8 @@ class LazyAgent(BW4TBrain):
                     for o in objects:
                         if o['location'] == self._possibleGoalBLocks[0]:
                             for g in self._goalBlocks:
-                                if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour']:
+                                if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
+                                    'colour'] == g['visualization']['colour']:
                                     self._sendMessage('Found goal block {\"size\": ' + str(
                                         o['visualization']['size']) + ', \"shape\": ' + str(
                                         o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -2267,38 +2284,38 @@ class LazyAgent(BW4TBrain):
             rating = self._trustBeliefs[member]['rating']
             if self._teamObservedStatus[member] is not None and self._teamStatus[member]['action'] == 'searching':
                 if self._teamObservedStatus[member] is not None:
-                    #print(member)
-                    #print('is in room' + str(findRoom(self._teamObservedStatus[member]['location'], state)))
-                    #print('says it is in room' + str(self._teamStatus[member]['room']))
+                    # print(member)
+                    # print('is in room' + str(findRoom(self._teamObservedStatus[member]['location'], state)))
+                    # print('says it is in room' + str(self._teamStatus[member]['room']))
                     if findRoom(self._teamObservedStatus[member]['location'], state) == self._teamStatus[member][
                         'room']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                        #print('trust increased')
+                        # print('trust increased')
                     else:
-                        if self._age - self._teamObservedStatus[member]['age'] > 10:
+                        if self._age - self._teamObservedStatus[member]['age'] > 8:
                             rating -= \
                                 3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                            #print('trust decreased')
+                                                 math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                            # print('trust decreased')
             elif self._teamStatus[member]['action'] == 'carrying':
                 if self._teamObservedStatus[member] is not None and len(
                         self._teamObservedStatus[member]['is_carrying']) > 0:
-                    #print(member)
-                    #print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
-                    #print('says it is carrying' + str(self._teamStatus[member]['block']))
+                    # print(member)
+                    # print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
+                    # print('says it is carrying' + str(self._teamStatus[member]['block']))
                     if self._teamStatus[member]['block'] in self._teamObservedStatus[member]['is_carrying']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                        #print('trust increased')
+                        # print('trust increased')
 
                     else:
                         rating -= \
                             3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
-                        #print('trust decreased')
+                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                        # print('trust decreased')
             if rating < 0:
                 rating = 0
             if rating > 1:
@@ -2382,6 +2399,7 @@ class LazyAgent(BW4TBrain):
                     self._teamObservedStatus[member] = {'location': location, 'is_carrying': blocks,
                                                         'age': self._age - 1}
 
+
 class LiarAgent(BW4TBrain):
 
     def __init__(self, settings: Dict[str, object]):
@@ -2435,7 +2453,7 @@ class LiarAgent(BW4TBrain):
                                       + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
                 else:
                     self._sendMessage('status of ' + name + ': location: '
-                                  + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
+                                      + str(location) + ', is carrying: ' + str(is_carrying), agent_name)
 
         receivedMessages = self._processMessages(self._teamMembers)
 
@@ -2458,7 +2476,7 @@ class LiarAgent(BW4TBrain):
             self._goalBlocks = state.get_with_property({'is_goal_block': True})
             self._goalsInitialized = True
             self._notExplored = [door for door in state.values()
-                               if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
+                                 if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
             self._all_room_names = state.get_all_room_names()
             if 'world_bounds' in self._all_room_names:
                 self._all_room_names.remove('world_bounds')
@@ -2495,7 +2513,7 @@ class LiarAgent(BW4TBrain):
             if Phase.PLAN_PATH_TO_ROOM == self._phase:
                 self._navigator.reset_full()
                 rooms = [door for door in state.values()
-                               if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
+                         if 'class_inheritance' in door and 'Door' in door['class_inheritance']]
                 if len(rooms) == 0:
                     return None, {}
                 # If not every room has been explored, pick one randomly from the non explored, else pick randomly pick a door
@@ -2520,7 +2538,7 @@ class LiarAgent(BW4TBrain):
                 if self._door['is_open']:
                     self._phase = Phase.ENTERING_ROOM
                 else:
-                     self._phase = Phase.OPEN_DOOR
+                    self._phase = Phase.OPEN_DOOR
 
             if Phase.OPEN_DOOR == self._phase:
                 self._phase = Phase.WAIT_FOR_DOOR
@@ -2550,7 +2568,8 @@ class LiarAgent(BW4TBrain):
                 if objects is not None:
                     for o in objects:
                         for g in self._goalBlocks:
-                            if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
+                            if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
+                                'colour'] == g['visualization']['colour'] and len(o['carried_by']) == 0:
                                 self._sendMassage('Found goal block {\"size\": ' + str(
                                     o['visualization']['size']) + ', \"shape\": ' + str(
                                     o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -2569,7 +2588,7 @@ class LiarAgent(BW4TBrain):
                                 self._carrying = g
                                 self._carryingO = o
                                 return action, action_kwargs
-                if action!=None:
+                if action != None:
                     return action, {}
                 if len(self._possibleGoalBLocks) == 0:
                     self._phase = Phase.PLAN_PATH_TO_ROOM
@@ -2622,9 +2641,10 @@ class LiarAgent(BW4TBrain):
                     self._phase = Phase.CHECK_GOALS
 
                 self._sendMassage('Dropped goal block {\"size\": ' + str(
-                                        self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
-                                        self._carryingO['visualization']['colour']) + '\"} at location ' + str(self.state.get_self()['location']),
+                    self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
+                    self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
+                    self._carryingO['visualization']['colour']) + '\"} at location ' + str(
+                    self.state.get_self()['location']),
                                   agent_name)
 
                 self._carrying = None
@@ -2667,10 +2687,12 @@ class LiarAgent(BW4TBrain):
                 if objects is not None:
                     for o in objects:
                         if o['location'] == self.state.get_self()['location']:
-                            if o['visualization']['shape'] != self._goalBlocks[0]['visualization']['shape'] or o['visualization']['colour'] != self._goalBlocks[0]['visualization']['colour']:
+                            if o['visualization']['shape'] != self._goalBlocks[0]['visualization']['shape'] or \
+                                    o['visualization']['colour'] != self._goalBlocks[0]['visualization']['colour']:
                                 self._phase = Phase.PUT_AWAY_WRONG_BLOCK
                                 self._navigator.reset_full()
-                                self._navigator.add_waypoints([[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
+                                self._navigator.add_waypoints(
+                                    [[self._goalBlocks[0]['location'][0], self._goalBlocks[0]['location'][1] - 3]])
                             else:
                                 self._carryingO = o
                                 self._phase = Phase.MOVE_GOAL_BLOCK
@@ -2708,9 +2730,9 @@ class LiarAgent(BW4TBrain):
                 self._goalBlocks.remove(self._goalBlocks[0])
 
                 self._sendMassage('Dropped goal block {\"size\": ' + str(
-                                        self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
-                                        self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
-                                        self._carryingO['visualization']['colour']) + '\"} at location ' + str(
+                    self._carryingO['visualization']['size']) + ', \"shape\": ' + str(
+                    self._carryingO['visualization']['shape']) + ', \"colour\": \"' + str(
+                    self._carryingO['visualization']['colour']) + '\"} at location ' + str(
                     self.state.get_self()['location']),
                                   agent_name)
                 self._carryingO = None
@@ -2777,7 +2799,8 @@ class LiarAgent(BW4TBrain):
                     for o in objects:
                         if o['location'] == self._possibleGoalBLocks[0]:
                             for g in self._goalBlocks:
-                                if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization']['colour'] == g['visualization']['colour']:
+                                if o['visualization']['shape'] == g['visualization']['shape'] and o['visualization'][
+                                    'colour'] == g['visualization']['colour']:
                                     self._sendMassage('Found goal block {\"size\": ' + str(
                                         o['visualization']['size']) + ', \"shape\": ' + str(
                                         o['visualization']['shape']) + ', \"colour\": \"' + str(
@@ -2855,10 +2878,10 @@ class LiarAgent(BW4TBrain):
                                          math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust increased')
                     else:
-                        if self._age - self._teamObservedStatus[member]['age'] > 10:
+                        if self._age - self._teamObservedStatus[member]['age'] > 8:
                             rating -= \
                                 3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                                                 math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                             # print('trust decreased')
             elif self._teamStatus[member]['action'] == 'carrying':
                 if self._teamObservedStatus[member] is not None and len(
@@ -2866,9 +2889,6 @@ class LiarAgent(BW4TBrain):
                     # print(member)
                     # print('is carrying' + str(self._teamObservedStatus[member]['is_carrying'][0]))
                     # print('says it is carrying' + str(self._teamStatus[member]['block']))
-                    if member == 'agent2':
-                        print(self._teamStatus[member]['block'])
-                        print(self._teamObservedStatus[member]['is_carrying'])
                     if self._teamStatus[member]['block'] in self._teamObservedStatus[member]['is_carrying']:
                         rating += \
                             increment * (1 / (theta * math.sqrt(2 * math.pi)) *
@@ -2878,7 +2898,7 @@ class LiarAgent(BW4TBrain):
                     else:
                         rating -= \
                             3 * increment * (1 / (theta * math.sqrt(2 * math.pi)) *
-                                         math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
+                                             math.exp(-0.5 * math.pow((rating - mu) / theta, 2)))
                         # print('trust decreased')
             if rating < 0:
                 rating = 0
